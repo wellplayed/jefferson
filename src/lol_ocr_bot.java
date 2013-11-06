@@ -21,6 +21,7 @@
  */
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -108,22 +109,68 @@ public class lol_ocr_bot {
 		return image;
 	}
 
+    public static BufferedImage grabScreen(Robot rob, int x, int y, int w, int h) {
+        return rob.createScreenCapture(new Rectangle(x, y, w, h));
+    }
+
+    public static void captureTeamGold(Robot rob, int i) throws IOException {
+        BufferedImage blue_gold_image = image_filter(grabScreen(rob, 760, 25, 80, 30));
+        BufferedImage red_gold_image = image_filter(grabScreen(rob, 1110, 25, 80, 30));
+        File blue_gold_image_file = new File("blue_gold_" + i + ".png");
+        ImageIO.write(blue_gold_image, "png", blue_gold_image_file);
+        File red_gold_image_file = new File("red_gold_" + i + ".png");
+        ImageIO.write(red_gold_image, "png", red_gold_image_file);
+        String blue_gold = read_text_from_image(blue_gold_image_file);
+        String red_gold = read_text_from_image(red_gold_image_file);
+        System.out.print("Iteration: " + i + " => ");
+        log_event(blue_gold, red_gold, "gold", "n/a", "n/a");
+    }
+
+    public static void capturePlayerGold(Robot rob, int i) throws IOException {
+        File[] blues = {
+            new File("blue_player_1_gold_" + i + ".png"),
+            new File("blue_player_2_gold_" + i + ".png"),
+            new File("blue_player_3_gold_" + i + ".png"),
+            new File("blue_player_4_gold_" + i + ".png"),
+            new File("blue_player_5_gold_" + i + ".png")
+        };
+        File[] reds = {
+            new File("red_player_1_gold_" + i + ".png"),
+            new File("red_player_2_gold_" + i + ".png"),
+            new File("red_player_3_gold_" + i + ".png"),
+            new File("red_player_4_gold_" + i + ".png"),
+            new File("red_player_5_gold_" + i + ".png")
+        };
+        ImageIO.write(image_filter(grabScreen(rob, 600, 923 , 155, 31 )), "png", blues[0]);
+        ImageIO.write(image_filter(grabScreen(rob, 600, 954, 155, 31  )), "png", blues[1]);
+        ImageIO.write(image_filter(grabScreen(rob, 600, 985, 155, 31  )), "png", blues[2]);
+        ImageIO.write(image_filter(grabScreen(rob, 600, 1016, 155, 31 )), "png", blues[3]);
+        ImageIO.write(image_filter(grabScreen(rob, 600, 1046, 155, 31 )), "png", blues[4]);
+        ImageIO.write(image_filter(grabScreen(rob, 1180, 923, 155, 31 )), "png",  reds[0]);
+        ImageIO.write(image_filter(grabScreen(rob, 1180, 954, 155, 31 )), "png",  reds[1]);
+        ImageIO.write(image_filter(grabScreen(rob, 1180, 985, 155, 31 )), "png",  reds[2]);
+        ImageIO.write(image_filter(grabScreen(rob, 1180, 1016, 155, 31)), "png",  reds[3]);
+        ImageIO.write(image_filter(grabScreen(rob, 1180, 1046, 155, 31)), "png",  reds[4]);
+        StringBuilder redGolds =  new StringBuilder("(Red team)  ");
+        StringBuilder blueGolds = new StringBuilder("(Blue team) ");
+
+        for(int j = 0; j < 5; j++) {
+            redGolds.append("" + (j + 1) + ": " + read_text_from_image(reds[j]) + ", ");
+            blueGolds.append("" + (j + 1) + ": " + read_text_from_image(blues[j]) + ", ");
+        }
+
+        System.out.println(blueGolds.toString());
+        System.out.println(redGolds.toString());
+    }
+
 	public static void main(String[] args) {
 		try{
 			Robot rob = new Robot();
 			rob.delay(3000);
             int i = 0;
 			while(true) {
-				BufferedImage blue_gold_image = image_filter(rob.createScreenCapture(new Rectangle(760,25,80,30)));
-				BufferedImage red_gold_image = image_filter(rob.createScreenCapture(new Rectangle(1110,25,80,30)));
-				File blue_gold_image_file = new File("blue_gold_" + i + ".png");
-				ImageIO.write(blue_gold_image, "png", blue_gold_image_file);
-				File red_gold_image_file = new File("red_gold_" + i + ".png");
-				ImageIO.write(red_gold_image, "png", red_gold_image_file);
-				String blue_gold = read_text_from_image(blue_gold_image_file);
-				String red_gold = read_text_from_image(red_gold_image_file);
-                System.out.print("Iteration: " + i + " => ");
-				log_event(blue_gold, red_gold, "gold", "n/a", "n/a");
+				captureTeamGold(rob, i);
+                capturePlayerGold(rob, i);
                 i++;
 				rob.delay(5000);
 			}
