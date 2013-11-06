@@ -20,6 +20,7 @@
  * -Experiment with reading smaller text and improving both image and text filters.
  */
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -36,8 +37,24 @@ import com.firebase.client.*;
 public class lol_ocr_bot {
 	
 	public static Firebase fb = new Firebase("https://ivylol-obscene.firebaseio.com/broadcasts/ivylol2/widget/-J7Zm9Gg4obv1PTxL3Nm/config/-J7_jpzNnnI_iu_HqU-Z/game_log");
-	
+    public static Replacer[] replacements = {
+        new Replacer("|(", "k"),
+        new Replacer("l", "1"),
+        new Replacer("-k", "k"),
+        new Replacer("I", "1"),
+        new Replacer("1(", "k"),
+        new Replacer("Z", "2")
+    };
+
 	public static void log_event(String blue_gold, String red_gold, String event, String team, String champion){
+        System.out.println(
+                "Blue: " + blue_gold +
+                " Red: " + red_gold +
+                " Event: " + event +
+                " Team: " + team +
+                " Champ: " + champion
+        );
+        /*
 		Firebase child = fb.push();
 		Map<String, String> data = new HashMap<String, String>();
 		data.put("time", "00h00m00s");
@@ -47,19 +64,35 @@ public class lol_ocr_bot {
 		data.put("team", team);
 		data.put("champion", champion);
 		child.setValue(data);
+		*/
 	}
 	
 	public static String text_filter(String text){
-		return text.replace("|(", "k").replace("l","1").replace("-k", "k").replace("I", "1");
+        for(int i = 0; i < replacements.length; i++) {
+            text = replacements[i].apply(text);
+        }
+        return text;
 	}
 	
-	public static String read_text_from_image(File image)throws Exception{
-		Runtime rt = Runtime.getRuntime();
-		Process tesseract = rt.exec("tesseract \"" + image.getAbsolutePath() + "\" \"" + image.getAbsolutePath().substring(0, image.getAbsolutePath().lastIndexOf(".")) + "\"");
-		tesseract.waitFor();
-		File f = new File(image.getAbsolutePath().substring(0, image.getAbsolutePath().lastIndexOf(".")) + ".txt");
-		Scanner s = new Scanner(f);
-		return text_filter(s.nextLine());
+	public static String read_text_from_image(File image) {
+        try {
+            Runtime rt = Runtime.getRuntime();
+            Process tesseract = rt.exec("tesseract \"" + image.getAbsolutePath() + "\" \"" + image.getAbsolutePath().substring(0, image.getAbsolutePath().lastIndexOf(".")) + "\"");
+            tesseract.waitFor();
+        } catch(Exception e) {
+            System.out.println("Error with Tesseract! check path");
+            e.printStackTrace();
+            return "n/a";
+        }
+
+        try{
+            File f = new File(image.getAbsolutePath().substring(0, image.getAbsolutePath().lastIndexOf(".")) + ".txt");
+            Scanner s = new Scanner(f);
+            return text_filter(s.nextLine());
+        } catch(Exception e) {
+            System.out.println("Error reading file " + image.getAbsolutePath());
+            return "n/a";
+        }
 	}
 	
 	public static BufferedImage image_filter(BufferedImage image){
@@ -79,22 +112,26 @@ public class lol_ocr_bot {
 		try{
 			Robot rob = new Robot();
 			rob.delay(3000);
-			for(int i=0; i<30; i++){
+            int i = 0;
+			while(true) {
 				BufferedImage blue_gold_image = image_filter(rob.createScreenCapture(new Rectangle(760,25,80,30)));
 				BufferedImage red_gold_image = image_filter(rob.createScreenCapture(new Rectangle(1110,25,80,30)));
-				File blue_gold_image_file = new File("blue_gold.png");
+				File blue_gold_image_file = new File("blue_gold_" + i + ".png");
 				ImageIO.write(blue_gold_image, "png", blue_gold_image_file);
-				File red_gold_image_file = new File("red_gold.png");
+				File red_gold_image_file = new File("red_gold_" + i + ".png");
 				ImageIO.write(red_gold_image, "png", red_gold_image_file);
 				String blue_gold = read_text_from_image(blue_gold_image_file);
 				String red_gold = read_text_from_image(red_gold_image_file);
-				log_event(blue_gold, red_gold, "gold", "n/a", "n/a");				
-				rob.delay(30000);
+                System.out.print("Iteration: " + i + " => ");
+				log_event(blue_gold, red_gold, "gold", "n/a", "n/a");
+                i++;
+				rob.delay(5000);
 			}
-			System.exit(0);
-		}catch(Exception e){
+		} catch(Exception e) {
 			System.out.println("IT BROKED");
 			e.printStackTrace();
-		}
+		} finally {
+            System.exit(0);
+        }
 	}
 }
