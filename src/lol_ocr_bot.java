@@ -47,6 +47,9 @@ public class lol_ocr_bot {
         new Replacer("Z", "2")
     };
 
+    public static final String INDIVIDUAL_GOLD_CONFIG = "individualgoldconf";
+    public static final String TEAM_GOLD_CONFIG = "teamgoldconf";
+
 	public static void log_event(String blue_gold, String red_gold, String event, String team, String champion){
         System.out.println(
                 "Blue: " + blue_gold +
@@ -75,10 +78,13 @@ public class lol_ocr_bot {
         return text;
 	}
 	
-	public static String read_text_from_image(File image) {
+	public static String read_text_from_image(File image, String config) {
+        if(config == null) {
+            config = "";
+        }
         try {
             Runtime rt = Runtime.getRuntime();
-            Process tesseract = rt.exec("tesseract \"" + image.getAbsolutePath() + "\" \"" + image.getAbsolutePath().substring(0, image.getAbsolutePath().lastIndexOf(".")) + "\"");
+            Process tesseract = rt.exec("tesseract \"" + image.getAbsolutePath() + "\" \"" + image.getAbsolutePath().substring(0, image.getAbsolutePath().lastIndexOf(".")) + "\" " + config);
             tesseract.waitFor();
         } catch(Exception e) {
             System.out.println("Error with Tesseract! check path");
@@ -120,8 +126,8 @@ public class lol_ocr_bot {
         ImageIO.write(blue_gold_image, "png", blue_gold_image_file);
         File red_gold_image_file = new File("red_gold_" + i + ".png");
         ImageIO.write(red_gold_image, "png", red_gold_image_file);
-        String blue_gold = read_text_from_image(blue_gold_image_file);
-        String red_gold = read_text_from_image(red_gold_image_file);
+        String blue_gold = read_text_from_image(blue_gold_image_file, TEAM_GOLD_CONFIG);
+        String red_gold = read_text_from_image(red_gold_image_file, TEAM_GOLD_CONFIG);
         System.out.print("Iteration: " + i + " => ");
         log_event(blue_gold, red_gold, "gold", "n/a", "n/a");
     }
@@ -155,8 +161,8 @@ public class lol_ocr_bot {
         StringBuilder blueGolds = new StringBuilder("(Blue team) ");
 
         for(int j = 0; j < 5; j++) {
-            redGolds.append("" + (j + 1) + ": " + read_text_from_image(reds[j]) + ", ");
-            blueGolds.append("" + (j + 1) + ": " + read_text_from_image(blues[j]) + ", ");
+            redGolds.append("" + (j + 1) + ": " + read_text_from_image(reds[j], INDIVIDUAL_GOLD_CONFIG) + ", ");
+            blueGolds.append("" + (j + 1) + ": " + read_text_from_image(blues[j], INDIVIDUAL_GOLD_CONFIG) + ", ");
         }
 
         System.out.println(blueGolds.toString());
