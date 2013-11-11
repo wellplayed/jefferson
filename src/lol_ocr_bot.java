@@ -22,7 +22,9 @@
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Scanner;
 import java.awt.Color;
@@ -36,8 +38,11 @@ import javax.imageio.ImageIO;
 import com.firebase.client.*;
 
 public class lol_ocr_bot {
-	
-	public static Firebase fb = new Firebase("https://ivylol-obscene.firebaseio.com/broadcasts/ivylol2/widget/-J7Zm9Gg4obv1PTxL3Nm/config/-J7_jpzNnnI_iu_HqU-Z/game_log");
+	public static final String FIREBASE_BASE_URL = "https://vin-obscene.firebaseio.com/broadcasts/";
+	public static Firebase fb;
+	public static Firebase activeSeries;
+	public static Firebase activeMatch;
+	public static String status = "stop";
     public static Replacer[] replacements = {
         new Replacer("|(", "k"),
         new Replacer("l", "1"),
@@ -46,11 +51,13 @@ public class lol_ocr_bot {
         new Replacer("1(", "k"),
         new Replacer("Z", "2")
     };
+    public static final long DELAY = 10000;
 
     public static final String INDIVIDUAL_GOLD_CONFIG = "individualgoldconf";
     public static final String TEAM_GOLD_CONFIG = "teamgoldconf";
+    public static final String TIME_CONFIG = "timeconf";
 
-	public static void log_event(String blue_gold, String red_gold, String event, String team, String champion){
+	public static void log_event(int i, String blue_gold, String red_gold, String event, String team, String champion){
         System.out.println(
                 "Blue: " + blue_gold +
                 " Red: " + red_gold +
@@ -58,17 +65,14 @@ public class lol_ocr_bot {
                 " Team: " + team +
                 " Champ: " + champion
         );
-        /*
-		Firebase child = fb.push();
+
+		Firebase newLogEntry = activeMatch.child("/game_log").push();
 		Map<String, String> data = new HashMap<String, String>();
-		data.put("time", "00h00m00s");
+		data.put("time", convertTimeToString(i*DELAY));
 		data.put("blue_gold", blue_gold);
 		data.put("red_gold", red_gold);
 		data.put("event", event);
-		data.put("team", team);
-		data.put("champion", champion);
-		child.setValue(data);
-		*/
+		newLogEntry.setValue(data);
 	}
 	
 	public static String text_filter(String text){
@@ -129,7 +133,7 @@ public class lol_ocr_bot {
         String blue_gold = read_text_from_image(blue_gold_image_file, TEAM_GOLD_CONFIG);
         String red_gold = read_text_from_image(red_gold_image_file, TEAM_GOLD_CONFIG);
         System.out.print("Iteration: " + i + " => ");
-        log_event(blue_gold, red_gold, "gold", "n/a", "n/a");
+        log_event(i, blue_gold, red_gold, "gold", "n/a", "n/a");
     }
 
     public static void capturePlayerGold(Robot rob, int i) throws IOException {
@@ -168,17 +172,82 @@ public class lol_ocr_bot {
         System.out.println(blueGolds.toString());
         System.out.println(redGolds.toString());
     }
+    
+    public static String convertTimeToString(long time){
+    	String seconds = "" + ((time/1000)%60);
+    	String minutes = "" + ((time/1000)/60)%60;
+    	String hours = "" + ((time/1000)/60)/60;
+    	if(seconds.length() == 1) seconds = "0" + seconds;
+    	if(minutes.length() == 1) minutes = "0" + minutes;
+    	if(hours.length() == 1) hours = "0" + hours;
+    	return hours + ":" + minutes + ":" + seconds;
+    	
+    }
+	
+	public static void configureFirebase(String broadcastSlug){
+		fb = new Firebase(FIREBASE_BASE_URL + broadcastSlug);
+		fb.child("/settings/active_series_id").addValueEventListener(new ValueEventListener() {
+		    @Override
+		    public void onDataChange(DataSnapshot snapshot) {
+		        activeSeries = fb.child("/series/" + snapshot.getValue().toString() + "/matches");
+		        activeSeries.addValueEventListener(new ValueEventListener() {
+		            @Override
+		            public void onDataChange(DataSnapshot snapshot) {
+		            	ArrayList dataList = (ArrayList)snapshot.getValue();
+		            	for(int i=0; i<dataList.size(); i++){
+		            		if(((Map)dataList.get(i)).get("active").toString().equals("true")){
+		            			if(activeMatch == null || !activeMatch.toString().equals(activeSeries.toString() + "/" + i)){
+		            				activeMatch = activeSeries.child("/" + i);
+		            				System.out.println(activeMatch.toString());
+		            			}
+		            		}
+		            	}
+		            }
+		            @Override
+		            public void onCancelled() {
+		                System.err.println("Listener was cancelled");
+		            }
+		        });
+		    }
+		    @Override
+		    public void onCancelled() {
+		        System.err.println("Listener was cancelled");
+		    }
+		});
+		
+		fb.child("/settings/ocr_status").addValueEventListener(new ValueEventListener() {
+		    @Override
+		    public void onDataChange(DataSnapshot snapshot) {
+		    	status = snapshot.getValue().toString();
+		    }
 
+		    @Override
+		    public void onCancelled() {
+		        System.err.println("Listener was cancelled");
+		    }
+		});
+	}
+	
 	public static void main(String[] args) {
+		configureFirebase("spq-na-1");
 		try{
 			Robot rob = new Robot();
 			rob.delay(3000);
             int i = 0;
 			while(true) {
-				captureTeamGold(rob, i);
-                capturePlayerGold(rob, i);
-                i++;
-				rob.delay(5000);
+				if(status.equals("start")){
+					long startTime = Calendar.getInstance().getTimeInMillis();
+					captureTeamGold(rob, i);
+	                i++;
+					rob.delay((int)(DELAY - (startTime-Calendar.getInstance().getTimeInMillis())));
+				}
+				else if(status.equals("stop")){
+					i = 0;
+					rob.delay(1000);
+				}
+				else if(status.equals("pause")){
+					rob.delay(1000);
+				}
 			}
 		} catch(Exception e) {
 			System.out.println("IT BROKED");
@@ -186,5 +255,6 @@ public class lol_ocr_bot {
 		} finally {
             System.exit(0);
         }
+        
 	}
 }
