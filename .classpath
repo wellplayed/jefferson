@@ -2,6 +2,7 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
-	<classpathentry kind="lib" path="firebase-client-jvm-LATEST.jar"/>
+	<classpathentry kind="lib" path="F:/my programs/ProjectJefferson/jna-4.0.0.jar"/>
+	<classpathentry kind="lib" path="F:/my programs/ProjectJefferson/jna-platform-4.0.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
