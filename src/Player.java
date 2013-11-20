@@ -25,6 +25,13 @@ public class Player {
 		return this.championName;
 	}
 	
+	public int getStat(int offset, Kernel32 kernel32, Pointer process){
+		IntByReference read = new IntByReference(0);
+		Memory output = new Memory(4);
+		kernel32.ReadProcessMemory(process, this.baseAddress + offset, output, 4, read);
+		return output.getInt(0);	
+	}
+	
 	public ArrayList<Stat> getStats(Kernel32 kernel32, Pointer process){
 		ArrayList<Stat> stats = new ArrayList<Stat>();
 		IntByReference read = new IntByReference(0);
@@ -34,5 +41,13 @@ public class Player {
 			stats.add(new Stat(PlayerStats.STAT_NAMES[i], output.getInt(PlayerStats.STATS[i])));
 		}
 		return stats;
+	}
+	
+	public static Stat getTotalStatFromPlayers(Player[] players, String name, int offset, Kernel32 kernel32, Pointer process){
+		int total = 0;
+		for(int i=0; i<players.length; i++){
+			total += players[i].getStat(offset, kernel32, process);
+		}
+		return new Stat(name, total);
 	}
 }
