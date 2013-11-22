@@ -1,6 +1,7 @@
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Scanner;
 
 import com.sun.jna.Memory;
 import com.sun.jna.Native;
@@ -56,10 +57,26 @@ public class ProjectJefferson {
 		return statsMap;
 	}
 	
-	public static String convertTimeToString(long time){
-    	String seconds = "" + ((time/1000)%60);
-    	String minutes = "" + ((time/1000)/60)%60;
-    	String hours = "" + ((time/1000)/60)/60;
+	public static String convertTimeToString(long time, String offset){
+		int offsetHours = 0, offsetMinutes = 0, offsetSeconds = 0;
+		
+		if(offset.contains("h")){
+			offset = offset.replace("h", ":").replace("m",":").replace("s", ":");
+			offsetHours = Integer.parseInt(offset.split(":")[0]);
+			offsetMinutes = Integer.parseInt(offset.split(":")[1]);
+			offsetSeconds = Integer.parseInt(offset.split(":")[2]);
+		}else if(offset.contains("m")){
+			offset = offset.replace("m",":").replace("s", ":");
+			offsetMinutes = Integer.parseInt(offset.split(":")[0]);
+			offsetSeconds = Integer.parseInt(offset.split(":")[1]);
+		}else if(offset.contains("s")){
+			offset = offset.replace("s", ":");
+			offsetSeconds = Integer.parseInt(offset.split(":")[0]);
+		}
+		time+= (offsetSeconds*1000) + ((offsetMinutes*1000)*60) + ((offsetHours*1000)*3600);
+    	String seconds = "" + (((time/1000))%60);
+    	String minutes = "" + (((time/1000))/60)%60;
+    	String hours = "" + (((time/1000))/60)/60;
     	if(seconds.length() == 1) seconds = "0" + seconds;
     	if(minutes.length() == 1) minutes = "0" + minutes;
     	if(hours.length() == 1) hours = "0" + hours;
@@ -67,13 +84,22 @@ public class ProjectJefferson {
     }
 	
 	public static void main(String[] args) throws InterruptedException {
-		Obscene obscene = new Obscene("spq-na-2");
+		Scanner s = new Scanner(System.in);
+		Obscene obscene;
+		System.out.print("Welcome to ProjectJefferson\n1 - SPQ-NA-2\n2 - SPQ-EU-2\nPlease select a broadcast:");
+		int broadcast = s.nextInt();
+		if(broadcast == 1){
+			obscene = new Obscene("spq-na-2", "-J7MJqvr34GTgjYChT65");
+		}else{
+			obscene = new Obscene("spq-eu-2", "-J7-wh2DSbt-4ppLMRpP");
+		}
 		Thread obsceneThread = new Thread(obscene);
-		String previousStatus = "stop";
+		String previousStatus = "reset";
 		Pointer lolprocess = null;
 		int baseAddress, x = 0;
 		Player[] leftPlayers = new Player[5];
 		Player[] rightPlayers = new Player[5];
+		String timeOffset = "0m0s";
 		obsceneThread.start();
 		while(true) {
 			String status = obscene.getGameStatus();
@@ -88,33 +114,44 @@ public class ProjectJefferson {
 						rightPlayers[i] = new Player("Right", "" + i, baseAddress + 0x7A8 + (i*0x188));
 					}
 				}
+				if(obscene.isTimeOffsetChanged()){
+					x=0;
+					timeOffset = obscene.getTimeOffset();
+				}
 				HashMap<String, Object> gameData = new HashMap<String, Object>();
 				HashMap<String, Object> leftStats = new HashMap<String, Object>();
 				HashMap<String, Object> rightStats = new HashMap<String, Object>();
 				HashMap<String, Object> teamData = new HashMap<String, Object>();
+				HashMap<String, Object> fullLeftStats = new HashMap<String, Object>();
+				HashMap<String, Object> fullRightStats = new HashMap<String, Object>();
+				HashMap<String, Object> gameLog = new HashMap<String, Object>();
 				for(int i=0; i<leftPlayers.length; i++){
-					leftStats.put("" + i, statListToMap(leftPlayers[i].getStats(kernel32, lolprocess)));
-					rightStats.put("" + i, statListToMap(rightPlayers[i].getStats(kernel32, lolprocess)));
+					fullLeftStats.put("" + i, statListToMap(leftPlayers[i].getStats(kernel32, lolprocess)));
+					fullRightStats.put("" + i, statListToMap(rightPlayers[i].getStats(kernel32, lolprocess)));
+					leftStats.put("" + i, statListToMap(leftPlayers[i].getLoggedStats(kernel32, lolprocess)));
+					rightStats.put("" + i, statListToMap(rightPlayers[i].getLoggedStats(kernel32, lolprocess)));
 				}
-				teamData.put("left",  leftStats);
-				teamData.put("right", rightStats);
-				Stat totalLeftGold = Player.getTotalStatFromPlayers(leftPlayers, "left_gold", PlayerStats.TOTAL_GOLD, kernel32, lolprocess);
-				Stat totalRightGold = Player.getTotalStatFromPlayers(rightPlayers, "right_gold", PlayerStats.TOTAL_GOLD, kernel32, lolprocess);
-				gameData.put(totalLeftGold.getName(), totalLeftGold.getValue());
-				gameData.put(totalRightGold.getName(), totalRightGold.getValue());
-				gameData.put("time", convertTimeToString(x*5000));
+				teamData.put("left",  fullLeftStats);
+				teamData.put("right", fullRightStats);
+				Stat totalLeftGold = Player.getTotalStatFromPlayers(leftPlayers, "left_gold", PlayerStats.TOTAL_GOLD, PlayerStats.DATA_TYPE.INTEGER, kernel32, lolprocess);
+				Stat totalRightGold = Player.getTotalStatFromPlayers(rightPlayers, "right_gold", PlayerStats.TOTAL_GOLD, PlayerStats.DATA_TYPE.INTEGER, kernel32, lolprocess);
+				gameLog.put("left", leftStats);
+				gameLog.put("right", rightStats);
+				gameLog.put("time", convertTimeToString(x*5000, timeOffset));
+				gameLog.put(totalLeftGold.getName(), totalLeftGold.getValue());
+				gameLog.put(totalRightGold.getName(), totalRightGold.getValue());
+				gameData.put("game_log", gameLog);
 				gameData.put("player_stats", teamData);
 				System.out.println(gameData);
 				obscene.queueData(gameData);
                 x++;
 				Thread.sleep(5000);
 			}
-			else if(status.equals("stop")){
-				Thread.sleep(1000);
-				x = 0;
-			}
 			else if(status.equals("pause")){
 				Thread.sleep(1000);
+			}else if(status.equals("stop")){
+				x=0;
+				Thread.sleep(3000);
 			}
 			previousStatus = status;
 		}
