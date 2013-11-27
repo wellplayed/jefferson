@@ -1,3 +1,5 @@
 bin/*
 experiments/*
 .idea
+out/
+lol-ocr-bot.iml
