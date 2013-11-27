@@ -96,7 +96,7 @@ public class ProjectJefferson {
 		Thread obsceneThread = new Thread(obscene);
 		String previousStatus = "reset";
 		Pointer lolprocess = null;
-		int baseAddress, x = 0;
+		int x = 0;
 		Player[] leftPlayers = new Player[5];
 		Player[] rightPlayers = new Player[5];
 		String timeOffset = "0m0s";
@@ -107,12 +107,22 @@ public class ProjectJefferson {
 				if(previousStatus.equals("stop")){
 					int pid = getProcessId("League of Legends (TM) Client"); // get our process ID  
 					lolprocess = openProcess(readRight, pid);
-					ArrayList<Integer> addresses = searchMemory(lolprocess, 280,280, 0x30000000, 0x40000000);
-					baseAddress = addresses.get(0)-0x1C;
-					for(int i=0; i<leftPlayers.length; i++){
-						leftPlayers[i] = new Player("Left", "" + i, baseAddress + (i*0x188));
-						rightPlayers[i] = new Player("Right", "" + i, baseAddress + 0x7A8 + (i*0x188));
-					}
+          PlayerLocator locator = new ExperienceAndOffsetsPlayerLocator(lolprocess);
+          ArrayList<Integer> allPlayers = locator.getPlayerAddresses();
+          int i = 0;
+          System.out.println("Left team");
+          for(Integer playerOffset: allPlayers.subList(0, 5)) {
+            int thisPlayer = i++;
+            leftPlayers[thisPlayer] = new Player("Left", "" + thisPlayer, playerOffset);
+            System.out.println(" " + i + ": " + String.format("0x%08X", playerOffset));
+          }
+          i = 0;
+          System.out.println("Right team");
+          for(Integer playerOffset: allPlayers.subList(5, 10)) {
+            int thisPlayer = i++;
+            rightPlayers[thisPlayer] = new Player("Right", "" + thisPlayer, playerOffset);
+            System.out.println(" " + i + ": " + String.format("0x%08X", playerOffset));
+          }
 				}
 				if(obscene.isTimeOffsetChanged()){
 					x=0;
