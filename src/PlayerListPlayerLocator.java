@@ -3,8 +3,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.sun.jna.Pointer;
-
-class ExperienceAndOffsetsPlayerLocator extends PlayerLocator {
+public class PlayerListPlayerLocator extends PlayerLocator {
   private static HashMap<Integer, Integer> pattern;
   static {
     pattern = new HashMap<Integer, Integer>();
@@ -12,20 +11,16 @@ class ExperienceAndOffsetsPlayerLocator extends PlayerLocator {
     pattern.put(0x1BC, 280); //next player xp to level 2
   }
 
-  public ExperienceAndOffsetsPlayerLocator(Pointer lolMemory) {
+  public PlayerListPlayerLocator(Pointer lolMemory) {
     super(lolMemory);
   }
 
   public ArrayList<Integer> getPlayerAddresses() {
     Integer player1 = searchForPattern(pattern);
+    Integer playerListRoot = searchForValue(player1);
     ArrayList<Integer> result = new ArrayList<Integer>();
-    int playerOffset = 0x188;
-    int teamOffset = 0x7A8;
-    for(int i = 0; i < 5; i++) {
-      result.add(player1 + (playerOffset * i));
-    }
-    for(int i = 0; i < 5; i++) {
-      result.add(player1 + teamOffset + (playerOffset * i));
+    for(int i = 0; i < 10; i++) {
+      result.add(getValueAt(playerListRoot + (i * 0x4)));
     }
     return result;
   }
