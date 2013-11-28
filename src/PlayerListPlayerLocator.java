@@ -11,10 +11,6 @@ public class PlayerListPlayerLocator extends PlayerLocator {
     pattern.put(0x1BC, 280); //next player xp to level 2
   }
 
-  public PlayerListPlayerLocator(Pointer lolMemory) {
-    super(lolMemory);
-  }
-
   public ArrayList<Integer> getPlayerAddresses() {
     Integer player1 = searchForPattern(pattern);
     Integer playerListRoot = searchForValue(player1);

@@ -13,10 +13,6 @@ class ExperienceAndOffsetsPlayerLocator extends PlayerLocator {
     pattern.put(0x344, 280);
   }
 
-  public ExperienceAndOffsetsPlayerLocator(Pointer lolMemory) {
-    super(lolMemory);
-  }
-
   public ArrayList<Integer> getPlayerAddresses() {
     Integer player1 = searchForPattern(pattern);
     ArrayList<Integer> result = new ArrayList<Integer>();
