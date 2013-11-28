@@ -11,8 +11,9 @@ abstract class PlayerLocator {
   protected static User32 user32 = (User32) Native.loadLibrary("user32", User32.class);
   protected static Kernel32 kernel32 = (Kernel32) Native.loadLibrary("kernel32", Kernel32.class);
   protected static int readRight = 0x0010;
-  protected static int playerBlockStart = 0x30000000;
+  protected static int playerBlockStart = 0x20000000;
   protected static int playerBlockEnd = 0x40000000;
+  protected static int playerSize = 0x348;
   protected Pointer memory;
 
   public PlayerLocator(Pointer appMemory) {
@@ -23,11 +24,11 @@ abstract class PlayerLocator {
 
   protected Integer searchForValue(Integer value) {
     int divider = 128;
-    int blockSize = (playerBlockEnd - 0x20000000) / divider;
+    int blockSize = (playerBlockEnd - playerBlockStart) / divider;
     //for each block
     for(int x = 0x20000000; x < playerBlockEnd; x += blockSize) {
       IntByReference read = new IntByReference(0);
-      Memory output = new Memory(blockSize);
+      Memory output = new Memory(blockSize+playerSize);
       kernel32.ReadProcessMemory(memory, x, output, blockSize, read);
       for(int i = 0; i < blockSize; i += 0x4){
         if(output.getInt(i) == value) {
@@ -52,13 +53,13 @@ abstract class PlayerLocator {
     //for each block
     for(int x = playerBlockStart; x < playerBlockEnd; x += blockSize){
       IntByReference read = new IntByReference(0);
-      Memory output = new Memory(blockSize);
+      Memory output = new Memory(blockSize + playerSize);
       kernel32.ReadProcessMemory(memory, x, output, blockSize, read);
       //for each 4bytes in block
       for(int i = 0; i < blockSize; i += 0x4){
         boolean match = true;
         for(Map.Entry<Integer, Integer> entry: pattern.entrySet()) {
-          if(i + entry.getKey() >= blockSize) {
+          if(i + entry.getKey() >= blockSize+playerSize) {
             match = false;
             break;
           }
