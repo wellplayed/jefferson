@@ -3,55 +3,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
 
-import com.sun.jna.Memory;
-import com.sun.jna.Native;
-import com.sun.jna.Pointer;
-import com.sun.jna.ptr.IntByReference;
 public class ProjectJefferson {
 
-	static User32 user32 = (User32) Native.loadLibrary("user32", User32.class);
-	static Kernel32 kernel32 = (Kernel32) Native.loadLibrary("kernel32", Kernel32.class);
-	static int readRight = 0x0010;
-	
-	public static int getProcessId(String window) {  
-        IntByReference pid = new IntByReference(0);  
-        user32.GetWindowThreadProcessId(user32.FindWindowA(null, window), pid);  
-        return pid.getValue();  
-    }  
-	
-	public static Pointer openProcess(int permissions, int pid) {  
-        Pointer process = kernel32.OpenProcess(permissions, true, pid);  
-        return process;  
-    }
-	
-	public static ArrayList<Integer> searchMemory(Pointer process, int value, int value2, int start, int end){
-		ArrayList<Integer> addresses = new ArrayList<Integer>();
-		int divider = 64;
-		for(int x=start; x<end; x += (end-start)/divider){
-			IntByReference read = new IntByReference(0);
-			Memory output = new Memory((end-start)/divider);
-			kernel32.ReadProcessMemory(process, x, output, (end-start)/divider, read);
-			for(int i=0; i<(end-start)/divider; i+=0x4){
-				if(output.getInt(i)==value){
-					if(output.getInt(i+0x188)==value2){
-						addresses.add(x+i);
-					}
-				}
-			}
-		}
-		return addresses;
-	}
-	
-	public static int readMemory(Pointer process, int address){
-		IntByReference read = new IntByReference(0);
-		Memory output = new Memory(4);
-		kernel32.ReadProcessMemory(process, address, output, 4, read);
-		return output.getInt(0);	
-	}
-	
-	public static HashMap<String, Object> statListToMap(ArrayList<Stat> statsList){
-		HashMap<String, Object> statsMap = new HashMap<String, Object>();
-		for(Stat s : statsList){
+	public static HashMap<String, String> statListToMap(ArrayList<StatEntry> statsList){
+		HashMap<String, String> statsMap = new HashMap<String, String>();
+		for(StatEntry s : statsList) {
 			statsMap.put(s.getName().replace(' ', '_').toLowerCase(), s.getValue());
 		}
 		return statsMap;
@@ -95,7 +51,6 @@ public class ProjectJefferson {
 		}
 		Thread obsceneThread = new Thread(obscene);
 		String previousStatus = "reset";
-		Pointer lolprocess = null;
 		int x = 0;
 		Player[] leftPlayers = new Player[5];
 		Player[] rightPlayers = new Player[5];
@@ -105,9 +60,7 @@ public class ProjectJefferson {
 			String status = obscene.getGameStatus();
 			if(status.equals("start")){
 				if(previousStatus.equals("stop")){
-					int pid = getProcessId("League of Legends (TM) Client"); // get our process ID  
-					lolprocess = openProcess(readRight, pid);
-          PlayerLocator locator = new ExperienceAndOffsetsPlayerLocator(lolprocess);
+          PlayerLocator locator = new PlayerListPlayerLocator();
           ArrayList<Integer> allPlayers = locator.getPlayerAddresses();
           int i = 0;
           System.out.println("Left team");
@@ -136,15 +89,15 @@ public class ProjectJefferson {
 				HashMap<String, Object> fullRightStats = new HashMap<String, Object>();
 				HashMap<String, Object> gameLog = new HashMap<String, Object>();
 				for(int i=0; i<leftPlayers.length; i++){
-					fullLeftStats.put("" + i, statListToMap(leftPlayers[i].getStats(kernel32, lolprocess)));
-					fullRightStats.put("" + i, statListToMap(rightPlayers[i].getStats(kernel32, lolprocess)));
-					leftStats.put("" + i, statListToMap(leftPlayers[i].getLoggedStats(kernel32, lolprocess)));
-					rightStats.put("" + i, statListToMap(rightPlayers[i].getLoggedStats(kernel32, lolprocess)));
+					fullLeftStats.put("" + i, statListToMap(leftPlayers[i].getStats()));
+					fullRightStats.put("" + i, statListToMap(rightPlayers[i].getStats()));
+					leftStats.put("" + i, statListToMap(leftPlayers[i].getLoggedStats()));
+					rightStats.put("" + i, statListToMap(rightPlayers[i].getLoggedStats()));
 				}
 				teamData.put("left",  fullLeftStats);
 				teamData.put("right", fullRightStats);
-				Stat totalLeftGold = Player.getTotalStatFromPlayers(leftPlayers, "left_gold", PlayerStats.TOTAL_GOLD, PlayerStats.DATA_TYPE.INTEGER, kernel32, lolprocess);
-				Stat totalRightGold = Player.getTotalStatFromPlayers(rightPlayers, "right_gold", PlayerStats.TOTAL_GOLD, PlayerStats.DATA_TYPE.INTEGER, kernel32, lolprocess);
+				StatEntry totalLeftGold = Player.getTotalStatFromPlayers(leftPlayers, new IntStat("left_gold", PlayerStats.TOTAL_GOLD));
+        StatEntry totalRightGold = Player.getTotalStatFromPlayers(rightPlayers, new IntStat("right_gold", PlayerStats.TOTAL_GOLD));
 				gameLog.put("left", leftStats);
 				gameLog.put("right", rightStats);
 				gameLog.put("time", convertTimeToString(x*5000, timeOffset));
@@ -154,7 +107,7 @@ public class ProjectJefferson {
 				gameData.put("player_stats", teamData);
 				System.out.println(gameData);
 				obscene.queueData(gameData);
-                x++;
+        x++;
 				Thread.sleep(5000);
 			}
 			else if(status.equals("pause")){
@@ -166,5 +119,4 @@ public class ProjectJefferson {
 			previousStatus = status;
 		}
 	}
-	
 }

@@ -1,32 +1,14 @@
+import java.util.Map;
 
-public class Stat {
-	private String name;
-	private String value;
-	
-	public Stat(String name, int value){
-		this.name = name;
-		this.value = "" + value;
-	}
-	
-	public Stat(String name, float value){
-		this.name = name;
-		this.value = "" + value;
-	}
-	
-	public Stat(String name, String value){
-		this.name = name;
-		this.value = value;
-	}
-	
-	public String getName(){
-		return this.name;
-	}
-	
-	public String getValue(){
-		return this.value;
-	}
-	
-	public String toString(){
-		return this.name + ": " + this.value;
-	}
+public abstract class Stat {
+  protected String name;
+  protected int offset;
+
+  public Stat(String name, int offset) {
+    this.name = name;
+    this.offset = offset;
+  }
+
+  public abstract StatEntry getEntry(int playerBaseAddress);
+  public abstract StatEntry zeroEntry();
 }
