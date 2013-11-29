@@ -2,6 +2,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
@@ -16,16 +17,22 @@ public class Obscene implements Runnable {
 	public Firebase fb;
 	public Firebase activeSeries;
 	public Firebase activeMatch;
+	public Firebase activeMatchPlayerStats;
+	public Firebase activeMatchGameLog;
+	public Firebase activeMatchGameInfo;
+	public String activeMatchSlug = "";
 	public String status = "reset";
 	public String gameTimeMark = "0m0s";
 	public String timeOffset = "0m0s"; 
 	public LinkedList<HashMap<String, Object>> firebaseQueue;
 	public boolean timeOffsetChanged;
+	public Semaphore firebaseQueueSync;
 
 	public Obscene(String broadcastSlug, String widgetId){
 		this.broadcastSlug = broadcastSlug;
 		this.widgetId = widgetId;
-		firebaseQueue = new LinkedList<HashMap<String, Object>>();
+		this.firebaseQueue = new LinkedList<HashMap<String, Object>>();
+		this.firebaseQueueSync = new Semaphore(1);
 		configureFirebase();
 	}
 	
@@ -34,6 +41,7 @@ public class Obscene implements Runnable {
 		fb.child("/settings/active_series_id").addValueEventListener(new ValueEventListener() {
 		    @Override
 		    public void onDataChange(DataSnapshot snapshot) {
+		    	activeMatchSlug = snapshot.getValue().toString();
 		        activeSeries = fb.child("/series/" + snapshot.getValue().toString() + "/matches");
 		        activeSeries.addValueEventListener(new ValueEventListener() {
 		            @Override
@@ -44,7 +52,11 @@ public class Obscene implements Runnable {
 			            		if(((Map)dataList.get(i)).get("active").toString().equals("true")){
 			            			if(activeMatch == null || !activeMatch.toString().equals(activeSeries.toString() + "/" + i)){
 			            				activeMatch = activeSeries.child("/" + i);
-			            				System.out.println(activeMatch.toString());
+			            				activeMatchPlayerStats = fb.child("/match_player_stats/" + activeMatchSlug + "/" + i);
+			            				activeMatchGameLog = fb.child("/match_game_log/" + activeMatchSlug + "/" + i);
+			            				activeMatchGameInfo = fb.child("/match_game_info/" + activeMatchSlug + "/" + i);
+			            				System.out.println("Active Match Changed (Series: " + activeMatchSlug + ", Match: " + i + ")");
+			            				
 			            			}
 			            		}
 		            		}
@@ -116,27 +128,39 @@ public class Obscene implements Runnable {
 	}
 	
 	public void logData(HashMap<String, Object> entry){
-		Firebase newPlayerStats = activeMatch.child("/player_stats");
-		newPlayerStats.setValue(entry.get("player_stats"));
-		Firebase newLogEntry = activeMatch.child("/game_log").push();
+		activeMatchPlayerStats.setValue(entry.get("player_stats"));
+		activeMatchGameInfo.child("/game_time").setValue(entry.get("game_time"));
+		Firebase newLogEntry = activeMatchGameLog.push();
 		newLogEntry.setValue(entry.get("game_log"));
 	}
 	
 	public void queueData(HashMap<String, Object> entry){
+		try {
+			firebaseQueueSync.acquire();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		firebaseQueue.add(entry);
+		firebaseQueueSync.release();
 	}
 
 	@Override
 	public void run() {
 		while(true){
-			if(!firebaseQueue.isEmpty()){
-				logData(firebaseQueue.pop());
-			}else{
-				try {
+			try {
+				firebaseQueueSync.acquire();
+				boolean queueReady = !firebaseQueue.isEmpty();
+				firebaseQueueSync.release();
+				if(queueReady){
+					firebaseQueueSync.acquire();
+					HashMap<String, Object> dataToLog = firebaseQueue.pop();
+					firebaseQueueSync.release();
+					logData(dataToLog);
+				}else{
 					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
 				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
 		}
 	}

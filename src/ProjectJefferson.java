@@ -1,5 +1,6 @@
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Scanner;
 
@@ -60,23 +61,24 @@ public class ProjectJefferson {
 			String status = obscene.getGameStatus();
 			if(status.equals("start")){
 				if(previousStatus.equals("stop")){
-          PlayerLocator locator = new PlayerListPlayerLocator();
-          ArrayList<Integer> allPlayers = locator.getPlayerAddresses();
-          int i = 0;
-          System.out.println("Left team");
-          for(Integer playerOffset: allPlayers.subList(0, 5)) {
-            int thisPlayer = i++;
-            leftPlayers[thisPlayer] = new Player("Left", "" + thisPlayer, playerOffset);
-            System.out.println(" " + i + ": " + String.format("0x%08X", playerOffset));
-          }
-          i = 0;
-          System.out.println("Right team");
-          for(Integer playerOffset: allPlayers.subList(5, 10)) {
-            int thisPlayer = i++;
-            rightPlayers[thisPlayer] = new Player("Right", "" + thisPlayer, playerOffset);
-            System.out.println(" " + i + ": " + String.format("0x%08X", playerOffset));
-          }
+				  ExperienceAndOffsetsPlayerLocator locator = new ExperienceAndOffsetsPlayerLocator();
+		          ArrayList<Integer> allPlayers = locator.getPlayerAddresses();
+		          int i = 0;
+		          System.out.println("Left team");
+		          for(Integer playerOffset: allPlayers.subList(0, 5)) {
+		            int thisPlayer = i++;
+		            leftPlayers[thisPlayer] = new Player("Left", "" + thisPlayer, playerOffset);
+		            System.out.println(" " + i + ": " + String.format("0x%08X", playerOffset));
+		          }
+		          i = 0;
+		          System.out.println("Right team");
+		          for(Integer playerOffset: allPlayers.subList(5, 10)) {
+		            int thisPlayer = i++;
+		            rightPlayers[thisPlayer] = new Player("Right", "" + thisPlayer, playerOffset);
+		            System.out.println(" " + i + ": " + String.format("0x%08X", playerOffset));
+		          }
 				}
+				long startTime = Calendar.getInstance().getTimeInMillis();
 				if(obscene.isTimeOffsetChanged()){
 					x=0;
 					timeOffset = obscene.getTimeOffset();
@@ -97,18 +99,21 @@ public class ProjectJefferson {
 				teamData.put("left",  fullLeftStats);
 				teamData.put("right", fullRightStats);
 				StatEntry totalLeftGold = Player.getTotalStatFromPlayers(leftPlayers, new IntStat("left_gold", PlayerStats.TOTAL_GOLD));
-        StatEntry totalRightGold = Player.getTotalStatFromPlayers(rightPlayers, new IntStat("right_gold", PlayerStats.TOTAL_GOLD));
+				StatEntry totalRightGold = Player.getTotalStatFromPlayers(rightPlayers, new IntStat("right_gold", PlayerStats.TOTAL_GOLD));
 				gameLog.put("left", leftStats);
 				gameLog.put("right", rightStats);
-				gameLog.put("time", convertTimeToString(x*5000, timeOffset));
+				gameData.put("game_time", convertTimeToString(x*5000, timeOffset));
 				gameLog.put(totalLeftGold.getName(), totalLeftGold.getValue());
 				gameLog.put(totalRightGold.getName(), totalRightGold.getValue());
 				gameData.put("game_log", gameLog);
 				gameData.put("player_stats", teamData);
 				System.out.println(gameData);
 				obscene.queueData(gameData);
-        x++;
-				Thread.sleep(5000);
+				x++;
+				long endTime = Calendar.getInstance().getTimeInMillis();
+				if(endTime - startTime > 0){
+					Thread.sleep(5000 - (endTime - startTime));
+				}
 			}
 			else if(status.equals("pause")){
 				Thread.sleep(1000);

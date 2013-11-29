@@ -13,7 +13,10 @@ public class PlayerListPlayerLocator extends PlayerLocator {
 
   public ArrayList<Integer> getPlayerAddresses() {
     Integer player1 = searchForPattern(pattern);
-    Integer playerListRoot = searchForValue(player1);
+    HashMap<Integer, Integer> playerListPattern = new HashMap<Integer, Integer>();
+    playerListPattern.put(0x0, player1);
+    playerListPattern.put(0x4, player1+0x188);
+    Integer playerListRoot = searchForPattern(playerListPattern);
     ArrayList<Integer> result = new ArrayList<Integer>();
     for(int i = 0; i < 10; i++) {
       result.add(getValueAt(playerListRoot + (i * 0x4)));
