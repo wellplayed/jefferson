@@ -14,10 +14,12 @@ public class PlayerStats {
 	public static final int CS = 0x44;
 	public static final int TOTAL_GOLD = 0x60;
 	public static final int UNSPENT_GOLD = 0x64;
+  /* Needs more research, I think they're pointers -SubD
 	public static final int SPELL_Q_ID = 0x128;
 	public static final int SPELL_W_ID = 0x134;
 	public static final int SPELL_E_ID = 0x140;
 	public static final int SPELL_R_ID = 0x150;
+	*/
 
   public static Stat[] STATS = {
       new IntStat("Total Health", TOTAL_HEALTH),
