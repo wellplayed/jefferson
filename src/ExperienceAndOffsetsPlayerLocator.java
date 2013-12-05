@@ -10,19 +10,20 @@ class ExperienceAndOffsetsPlayerLocator extends PlayerLocator {
     pattern = new HashMap<Integer, Integer>();
     pattern.put(0x34, 280); //xp to level 2
     pattern.put(Player.PLAYER_SIZE + 0x34, 280); //next player xp to level 2
-    pattern.put((Player.PLAYER_SIZE * 2) + 0x344, 280);
+    pattern.put((Player.PLAYER_SIZE * 2) + 0x34, 280);
+    pattern.put((Player.PLAYER_SIZE * 3) + 0x34, 280);
+    pattern.put((Player.PLAYER_SIZE * 4) + 0x34, 280);
   }
 
   public ArrayList<Integer> getPlayerAddresses() {
     Integer player1 = searchForPattern(pattern);
     ArrayList<Integer> result = new ArrayList<Integer>();
-    int playerOffset = 0x188;
-    int teamOffset = 0x7A8;
+    int teamOffset = 0x7F8;
     for(int i = 0; i < 5; i++) {
-      result.add(player1 + (playerOffset * i));
+      result.add(player1 + (Player.PLAYER_SIZE * i));
     }
     for(int i = 0; i < 5; i++) {
-      result.add(player1 + teamOffset + (playerOffset * i));
+      result.add(player1 + teamOffset + (Player.PLAYER_SIZE * i));
     }
     return result;
   }

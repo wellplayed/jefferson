@@ -84,8 +84,10 @@ public class Obscene implements Runnable {
 			    		if(event.equals("update") && !gameTimeMark.equals(timeOffset)){
 			    			timeOffset = gameTimeMark;
 			    			timeOffsetChanged=true;
+			    			System.out.println("Game Time Updated: " + timeOffset);
 			    		}else{
 			    			status = ((Map)eventList.get(eventList.size()-1)).get("event_id").toString();
+			    			System.out.println("Game " + status + "ed");
 			    		}
 			    		break;	
 			    	}
@@ -98,7 +100,7 @@ public class Obscene implements Runnable {
 		    }
 		});
 		
-		fb.child("/widget/" + widgetId + "/config/default/game_time_mark").addValueEventListener(new ValueEventListener() {
+		fb.child("/widget/" + widgetId + "/config/-J-rsf0DZNOFdrg1Jsdz/game_time_mark").addValueEventListener(new ValueEventListener() {
 		    @Override
 		    public void onDataChange(DataSnapshot snapshot) {
 		    	gameTimeMark = snapshot.getValue().toString();
@@ -128,10 +130,12 @@ public class Obscene implements Runnable {
 	}
 	
 	public void logData(HashMap<String, Object> entry){
-		activeMatchPlayerStats.setValue(entry.get("player_stats"));
 		activeMatchGameInfo.child("/game_time").setValue(entry.get("game_time"));
-		Firebase newLogEntry = activeMatchGameLog.push();
-		newLogEntry.setValue(entry.get("game_log"));
+		if((Integer)entry.get("upload_type") == 1){
+			activeMatchPlayerStats.setValue(entry.get("player_stats"));
+			Firebase newLogEntry = activeMatchGameLog.push();
+			newLogEntry.setValue(entry.get("game_log"));
+		}
 	}
 	
 	public void queueData(HashMap<String, Object> entry){
@@ -157,7 +161,7 @@ public class Obscene implements Runnable {
 					firebaseQueueSync.release();
 					logData(dataToLog);
 				}else{
-					Thread.sleep(1000);
+					Thread.sleep(500);
 				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();

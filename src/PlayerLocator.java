@@ -10,12 +10,12 @@ import com.sun.jna.ptr.IntByReference;
 abstract class PlayerLocator {
   protected static int playerBlockStart = 0x20000000;
   protected static int playerBlockEnd = 0x40000000;
-  protected static int playerSize = 0x348;
+  protected static int playerSize = 0x694;
 
   public abstract ArrayList<Integer> getPlayerAddresses();
 
   protected Integer searchForValue(Integer value) {
-    int divider = 128;
+    int divider = 256;
     int blockSize = (playerBlockEnd - playerBlockStart) / divider;
     //for each block
     for(int x = 0x20000000; x < playerBlockEnd; x += blockSize) {
@@ -37,7 +37,7 @@ abstract class PlayerLocator {
 
   protected Integer searchForPattern(HashMap<Integer, Integer> pattern) {
     ArrayList<Integer> addresses = new ArrayList<Integer>();
-    int divider = 64;
+    int divider = 256;
     int blockSize = (playerBlockEnd - playerBlockStart)/divider;
     //for each block
     for(int x = playerBlockStart; x < playerBlockEnd; x += blockSize){
@@ -60,6 +60,7 @@ abstract class PlayerLocator {
           }
         }
         if(match) {
+          System.out.println(String.format("0x%08X",x+i));
           addresses.add(x + i);
         }
       }

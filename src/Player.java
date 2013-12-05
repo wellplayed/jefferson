@@ -7,7 +7,7 @@ import com.sun.jna.ptr.IntByReference;
 
 public class Player {
 
-  public static final int PLAYER_SIZE = 0x194;
+  public static final int PLAYER_SIZE = 0x198;
 
 	private String playerName;
 	private String championName;
