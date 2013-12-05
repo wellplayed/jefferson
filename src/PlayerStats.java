@@ -14,6 +14,13 @@ public class PlayerStats {
 	public static final int CS = 0x44;
 	public static final int TOTAL_GOLD = 0x60;
 	public static final int UNSPENT_GOLD = 0x64;
+	public static final int ITEM0 = 0xCC;
+	public static final int ITEM1 = 0xDC;
+	public static final int ITEM2 = 0xEC;
+	public static final int ITEM3 = 0xFC;
+	public static final int ITEM4 = 0x10C;
+	public static final int ITEM5 = 0x11C;
+	public static final int ITEM6 = 0x12C;
   /* Needs more research, I think they're pointers -SubD
 	public static final int SPELL_Q_ID = 0x128;
 	public static final int SPELL_W_ID = 0x134;
@@ -34,7 +41,21 @@ public class PlayerStats {
       new IntStat("Assists", ASSISTS),
       new IntStat("CS", CS),
       new IntStat("Total Gold", TOTAL_GOLD),
-      new FloatStat("Unspent Gold", UNSPENT_GOLD)
+      new FloatStat("Unspent Gold", UNSPENT_GOLD),
+      new IntStat("Item 0 ID", ITEM0),
+      new ItemValueStat("Item 0 Value", ITEM0),
+      new IntStat("Item 1 ID", ITEM1),
+      new ItemValueStat("Item 1 Value", ITEM1),
+      new IntStat("Item 2 ID", ITEM2),
+      new ItemValueStat("Item 2 Value", ITEM2),
+      new IntStat("Item 3 ID", ITEM3),
+      new ItemValueStat("Item 3 Value", ITEM3),
+      new IntStat("Item 4 ID", ITEM4),
+      new ItemValueStat("Item 4 Value", ITEM4),
+      new IntStat("Item 5 ID", ITEM5),
+      new ItemValueStat("Item 5 Value", ITEM5),
+      new IntStat("Item 6 ID", ITEM6),
+      new ItemValueStat("Item 6 Value", ITEM6)
   };
 
   public static Stat[] LOGGED_STATS = {
