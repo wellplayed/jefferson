@@ -55,6 +55,13 @@ public class Obscene implements Runnable {
 			            				activeMatchPlayerStats = fb.child("/match_player_stats/" + activeMatchSlug + "/" + i);
 			            				activeMatchGameLog = fb.child("/match_game_log/" + activeMatchSlug + "/" + i);
 			            				activeMatchGameInfo = fb.child("/match_game_info/" + activeMatchSlug + "/" + i);
+			            				try {
+											firebaseQueueSync.acquire();
+											firebaseQueue = new LinkedList<HashMap<String, Object>>();
+											firebaseQueueSync.release();
+										} catch (InterruptedException e) {
+											e.printStackTrace();
+										}
 			            				System.out.println("Active Match Changed (Series: " + activeMatchSlug + ", Match: " + i + ")");
 			            				
 			            			}

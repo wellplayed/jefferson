@@ -57,6 +57,18 @@ public class PlayerStats {
       new IntStat("Item 6 ID", ITEM6),
       new ItemValueStat("Item 6 Value", ITEM6)
   };
+  
+  public static Stat[] SC2_STATS = {
+	  new IntStat("Minerals", 0x0),
+	  new IntStat("Gas", 0x8),
+	  new IntStat("Mineral Income", 0x80),
+	  new IntStat("Gas Income", 0x88)
+  };
+  
+  public static Stat[] SC2_LOGGED_STATS = {
+	  new IntStat("Mineral Income", 0x80),
+	  new IntStat("Gas Income", 0x88)
+  };
 
   public static Stat[] LOGGED_STATS = {
       new IntStat("Total Gold", TOTAL_GOLD)
