@@ -8,6 +8,10 @@ public class MemoryAccess {
   static Kernel32 kernel32 = (Kernel32) Native.loadLibrary("kernel32", Kernel32.class);
   static int readRight = 0x0010;
   static Pointer lolMemory = openProcess(readRight, getProcessId("Starcraft II"));
+  
+  public static void setProcessName(String name){
+	  lolMemory = openProcess(readRight, getProcessId(name));
+  }
 
   private static int getProcessId(String window) {
     IntByReference pid = new IntByReference(0);

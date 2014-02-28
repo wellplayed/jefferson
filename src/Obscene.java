@@ -26,13 +26,15 @@ public class Obscene implements Runnable {
 	public String timeOffset = "0m0s"; 
 	public LinkedList<HashMap<String, Object>> firebaseQueue;
 	public boolean timeOffsetChanged;
+	public boolean useRemoteTime;
 	public Semaphore firebaseQueueSync;
 
-	public Obscene(String broadcastSlug, String widgetId){
+	public Obscene(String broadcastSlug, String widgetId, boolean useRemoteTime){
 		this.broadcastSlug = broadcastSlug;
 		this.widgetId = widgetId;
 		this.firebaseQueue = new LinkedList<HashMap<String, Object>>();
 		this.firebaseQueueSync = new Semaphore(1);
+		this.useRemoteTime = useRemoteTime;
 		configureFirebase();
 	}
 	
@@ -106,18 +108,19 @@ public class Obscene implements Runnable {
 		        System.err.println("Listener was cancelled");
 		    }
 		});
-		
-		fb.child("/widget/" + widgetId + "/config/-J-rsf0DZNOFdrg1Jsdz/game_time_mark").addValueEventListener(new ValueEventListener() {
-		    @Override
-		    public void onDataChange(DataSnapshot snapshot) {
-		    	gameTimeMark = snapshot.getValue().toString();
-		    }
-
-		    @Override
-		    public void onCancelled() {
-		        System.err.println("Listener was cancelled");
-		    }
-		});
+		if(this.useRemoteTime){
+			fb.child("/widget/" + widgetId + "/config/-J-rsf0DZNOFdrg1Jsdz/game_time_mark").addValueEventListener(new ValueEventListener() {
+			    @Override
+			    public void onDataChange(DataSnapshot snapshot) {
+			    	gameTimeMark = snapshot.getValue().toString();
+			    }
+	
+			    @Override
+			    public void onCancelled() {
+			        System.err.println("Listener was cancelled");
+			    }
+			});
+		}
 	}
 	
 	public boolean isTimeOffsetChanged(){
@@ -168,7 +171,7 @@ public class Obscene implements Runnable {
 					firebaseQueueSync.release();
 					logData(dataToLog);
 				}else{
-					Thread.sleep(500);
+					Thread.sleep(250);
 				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();

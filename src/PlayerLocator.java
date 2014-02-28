@@ -8,17 +8,22 @@ import com.sun.jna.Pointer;
 import com.sun.jna.ptr.IntByReference;
 
 abstract class PlayerLocator {
-  protected static int playerBlockStart = 0x20000000;
-  protected static int playerBlockEnd = 0x40000000;
+  protected static int playerBlockStart = 0x10000000;
+  protected static int playerBlockEnd = 0x50000000;
   protected static int playerSize = 0x694;
 
   public abstract ArrayList<Integer> getPlayerAddresses();
+  
+  protected Integer searchForValue(Integer value){
+	  int divider = 256;
+	  int blockSize = (playerBlockStart - playerBlockStart) / divider;
+	  return searchForValue(value, playerBlockStart, playerBlockEnd, blockSize);
+  }
 
-  protected Integer searchForValue(Integer value) {
-    int divider = 256;
-    int blockSize = (playerBlockEnd - playerBlockStart) / divider;
+  protected Integer searchForValue(Integer value, int startAddress, int endAddress, int blockSize) {
     //for each block
-    for(int x = 0x20000000; x < playerBlockEnd; x += blockSize) {
+    //System.out.println(String.format("0x%08X", blockSize));
+    for(int x = startAddress; x < playerBlockEnd; x += blockSize) {
       IntByReference read = new IntByReference(0);
       Memory output = new Memory(blockSize+playerSize);
       MemoryAccess.readBlock(output, x, blockSize, read);
@@ -30,6 +35,7 @@ abstract class PlayerLocator {
     }
     return -1;
   }
+  
 
   protected Integer getValueAt(Integer address) {
     return MemoryAccess.getInteger(address);
@@ -37,7 +43,7 @@ abstract class PlayerLocator {
 
   protected Integer searchForPattern(HashMap<Integer, Integer> pattern) {
     ArrayList<Integer> addresses = new ArrayList<Integer>();
-    int divider = 256;
+    int divider = 512;
     int blockSize = (playerBlockEnd - playerBlockStart)/divider;
     //for each block
     for(int x = playerBlockStart; x < playerBlockEnd; x += blockSize){

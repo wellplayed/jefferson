@@ -43,24 +43,45 @@ public class ProjectJefferson {
 	public static void main(String[] args) throws InterruptedException {
 		Scanner s = new Scanner(System.in);
 		Obscene obscene = null;
-		int game = 1;
-		System.out.print("Welcome to ProjectJefferson\n1 - SPQ-NA-2\n2 - SPQ-EU-2\n3 - SPQ-NA-Group\nPlease select a broadcast:");
+		SC2Calibration sc2cal = null;
+		System.out.println("Welcome to ProjectJefferson");
+		System.out.print("1 - League of Legends\n2 - Starcraft 2\nPlease Select a Game");
+		int game = s.nextInt();
+		switch(game){
+		case 1:
+			MemoryAccess.setProcessName("League of Legends (TM) Client");
+			break;
+		case 2:
+			MemoryAccess.setProcessName("Starcraft II");
+			sc2cal = new SC2Calibration();
+			break;
+		default:
+			System.err.println("Invalid Game");
+			System.exit(0);
+		}
+		System.out.print("\n1 - SPQ-NA-2\n2 - SPQ-EU-2\n3 - SPQ-NA-Group\n4 - Enders Cup\nPlease select a broadcast:");
 		int broadcast = s.nextInt();
 		switch(broadcast){
 		case 1:
-			obscene = new Obscene("spq-na-2", "-J7MJqvr34GTgjYChT65");
+			obscene = new Obscene("spq-na-2", "-J7MJqvr34GTgjYChT65", true);
 			break;
 		case 2:
-			obscene = new Obscene("spq-eu-2", "-J7-wh2DSbt-4ppLMRpP");
+			obscene = new Obscene("spq-eu-2", "-J7-wh2DSbt-4ppLMRpP", true);
 			break;
 		case 3:
-			obscene = new Obscene("spq-na-group", "-J7MJqvr34GTgjYChT65");
+			obscene = new Obscene("spq-na-group", "-J7MJqvr34GTgjYChT65", true);
 			break;
+		case 4:
+			obscene = new Obscene("enderscup", "-JFQ23F7P1S01pAmACCf", false);
+			break;
+		default:
+			System.err.println("Invalid Broadcast");
+			System.exit(0);
 		}
 		Thread obsceneThread = new Thread(obscene);
 		obsceneThread.start();
 		Thread.sleep(5000);
-		if(game==0){
+		if(game==1){
 			/* League of Legends */ 
 			String previousStatus = "stop";
 			int x = 0;
@@ -144,7 +165,7 @@ public class ProjectJefferson {
 				}
 				previousStatus = status;
 			}
-		}else if(game==1){
+		}else if(game==2){
 			/* Starcraft 2 */ 
 			String previousStatus = "stop";
 			int x = 0;
@@ -159,8 +180,8 @@ public class ProjectJefferson {
 						timeOffset = obscene.getTimeOffset();
 					}
 					if(previousStatus.equals("stop")){
-						playerOne = new SC2Player("PlayerOne", 0x0395F9D8);
-						playerTwo = new SC2Player("PlayerTwo", 0x039607E8);
+						playerOne = new SC2Player("PlayerOne", sc2cal.getPlayerAddresses().get(0));
+						playerTwo = new SC2Player("PlayerTwo", sc2cal.getPlayerAddresses().get(1));
 					}
 					long startTime = Calendar.getInstance().getTimeInMillis();
 					if(x%1==0){
@@ -173,9 +194,9 @@ public class ProjectJefferson {
 						
 						gameLog.put("0", statListToMap(playerOne.getLoggedStats()));
 						gameLog.put("1", statListToMap(playerTwo.getLoggedStats()));
-						gameLog.put("time", convertTimeToString(x*1000, timeOffset));
+						gameLog.put("time", convertTimeToString(x*5000, timeOffset));
 						
-						gameData.put("game_time", convertTimeToString(x*1000, timeOffset));
+						gameData.put("game_time", convertTimeToString(x*5000, timeOffset));
 						gameData.put("player_stats", playerData);
 						gameData.put("game_log", gameLog);
 						gameData.put("upload_type", 1);
@@ -186,7 +207,7 @@ public class ProjectJefferson {
 					x++;
 					long endTime = Calendar.getInstance().getTimeInMillis();
 					if(endTime - startTime >= 0){
-						Thread.sleep(1000 - (endTime - startTime));
+						Thread.sleep(725*5 - (endTime - startTime));
 					}
 				}
 				else if(status.equals("pause")){

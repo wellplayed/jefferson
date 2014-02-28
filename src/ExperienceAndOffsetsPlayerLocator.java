@@ -17,6 +17,7 @@ class ExperienceAndOffsetsPlayerLocator extends PlayerLocator {
 
   public ArrayList<Integer> getPlayerAddresses() {
     Integer player1 = searchForPattern(pattern);
+	//Integer player1 = 0x3B86CAA0;
     ArrayList<Integer> result = new ArrayList<Integer>();
     int teamOffset = 0x7F8;
     for(int i = 0; i < 5; i++) {

@@ -59,15 +59,22 @@ public class PlayerStats {
   };
   
   public static Stat[] SC2_STATS = {
-	  new IntStat("Minerals", 0x0),
-	  new IntStat("Gas", 0x8),
-	  new IntStat("Mineral Income", 0x80),
-	  new IntStat("Gas Income", 0x88)
+	  new IntStat("Average APM", 0x0),
+	  new IntStat("Current APM", 0x38),
+	  new IntStat("Units Killed", 0x70),
+	  new IntStat("Units Lost", 0x78),
+	  new IntStat("Workers", 0x1E8),
+	  new IntStat("Minerals", 0x300),
+	  new IntStat("Gas", 0x308),
+	  new IntStat("Mineral Income", 0x380),
+	  new IntStat("Gas Income", 0x388)
   };
   
   public static Stat[] SC2_LOGGED_STATS = {
-	  new IntStat("Mineral Income", 0x80),
-	  new IntStat("Gas Income", 0x88)
+	  new IntStat("Average APM", 0x0),
+	  new IntStat("Workers", 0x1E8),
+	  new IntStat("Mineral Income", 0x380),
+	  new IntStat("Gas Income", 0x388)
   };
 
   public static Stat[] LOGGED_STATS = {
