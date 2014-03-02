@@ -21,12 +21,31 @@ public class PlayerStats {
 	public static final int ITEM4 = 0x10C;
 	public static final int ITEM5 = 0x11C;
 	public static final int ITEM6 = 0x12C;
-  /* Needs more research, I think they're pointers -SubD
-	public static final int SPELL_Q_ID = 0x128;
-	public static final int SPELL_W_ID = 0x134;
-	public static final int SPELL_E_ID = 0x140;
-	public static final int SPELL_R_ID = 0x150;
-	*/
+	public static final int AD	= 0x74;
+	public static final int AP	= 0x78;
+	public static final int ATTACK_SPEED = 0x7C;
+	public static final int MOVESPEED = 0x80;
+	public static final int ARMOR =	0x84;
+	public static final int MR = 0x88;
+	public static final int HEALTH_REGEN = 0x98;
+	public static final int MANA_REGEN = 0x9C;
+	public static final int PERCENT_ARMOR_PEN = 0xA0;
+	public static final int ARMOR_PEN = 0xA4;
+	public static final int LIFESTEAL = 0xA8;
+	public static final int PERCENT_MAGIC_PEN = 0xAC;
+	public static final int MAGIC_PEN = 0xB0;
+	public static final int SPELLVAMP = 0xB4;
+	public static final int COOLDOWN_REDUCTION = 0xB8;
+	public static final int SPELL_Q_LEVEL = 0x140;
+	public static final int SPELL_W_LEVEL = 0x14C;
+	public static final int SPELL_E_LEVEL = 0x158;
+	public static final int SPELL_R_LEVEL = 0x164;
+	public static final int SPELL_Q_COOLDOWN = 0x13C;
+	public static final int SPELL_W_COOLDOWN = 0x148;
+	public static final int SPELL_E_COOLDOWN = 0x154;
+	public static final int SPELL_R_COOLDOWN = 0x160;
+	public static final int SUMMONER_1_COOLDOWN = 0x16C;
+	public static final int SUMMONER_2_COOLDOWN = 0x178;
 
   public static Stat[] STATS = {
       new IntStat("Total Health", TOTAL_HEALTH),
@@ -55,7 +74,32 @@ public class PlayerStats {
       new IntStat("Item 5 ID", ITEM5),
       new ItemValueStat("Item 5 Value", ITEM5),
       new IntStat("Item 6 ID", ITEM6),
-      new ItemValueStat("Item 6 Value", ITEM6)
+      new ItemValueStat("Item 6 Value", ITEM6),
+      new IntStat("Attack Damage", AD),
+      new IntStat("Ability Power", AP),
+      new FloatStat("Attack Speed", ATTACK_SPEED),
+      new IntStat("Movement Speed", MOVESPEED),
+      new IntStat("Armor", ARMOR),
+      new IntStat("Magic Resist", MR),
+      new IntStat("Health Regen", HEALTH_REGEN),
+      new IntStat("Mana Regen", MANA_REGEN),
+      new IntStat("Percent Armor Penetration",PERCENT_ARMOR_PEN),
+      new IntStat("Armor Penetration", ARMOR_PEN),
+      new IntStat("Lifesteal", LIFESTEAL),
+      new IntStat("Percent Magic Penetration", PERCENT_MAGIC_PEN),
+      new IntStat("Magic Penetration", MAGIC_PEN),
+      new IntStat("Spellvamp", SPELLVAMP),
+      new FloatStat("Cooldown Reduction", COOLDOWN_REDUCTION),
+      new IntStat("Spell Q Level", SPELL_Q_LEVEL),
+      new IntStat("Spell W Level", SPELL_W_LEVEL),
+      new IntStat("Spell E Level", SPELL_E_LEVEL),
+      new IntStat("Spell R Level", SPELL_R_LEVEL),
+      new FloatStat("Spell Q Cooldown", SPELL_Q_COOLDOWN),
+      new FloatStat("Spell W Cooldown", SPELL_W_COOLDOWN),
+      new FloatStat("Spell E Cooldown", SPELL_E_COOLDOWN),
+      new FloatStat("Spell R Cooldown", SPELL_R_COOLDOWN),
+      new FloatStat("Summoner 1 Cooldown", SUMMONER_1_COOLDOWN),
+      new FloatStat("Summoner 2 Cooldown", SUMMONER_2_COOLDOWN)
   };
   
   public static Stat[] SC2_STATS = {

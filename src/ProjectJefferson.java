@@ -45,11 +45,15 @@ public class ProjectJefferson {
 		Obscene obscene = null;
 		SC2Calibration sc2cal = null;
 		System.out.println("Welcome to ProjectJefferson");
-		System.out.print("1 - League of Legends\n2 - Starcraft 2\nPlease Select a Game");
+		System.out.print("1 - League of Legends\n2 - Starcraft 2\nPlease Select a Game: ");
 		int game = s.nextInt();
+		int numPlayers = 5;
+		boolean doLogData;
 		switch(game){
 		case 1:
 			MemoryAccess.setProcessName("League of Legends (TM) Client");
+			System.out.print("Number of players per team: ");
+			numPlayers = s.nextInt();
 			break;
 		case 2:
 			MemoryAccess.setProcessName("Starcraft II");
@@ -59,20 +63,25 @@ public class ProjectJefferson {
 			System.err.println("Invalid Game");
 			System.exit(0);
 		}
+		System.out.print("1 - Data Log On\n2 - Data Log Off\nEnable Data Log: ");
+		doLogData = (s.nextInt() == 1)?true:false;
 		System.out.print("\n1 - SPQ-NA-2\n2 - SPQ-EU-2\n3 - SPQ-NA-Group\n4 - Enders Cup\nPlease select a broadcast:");
 		int broadcast = s.nextInt();
 		switch(broadcast){
 		case 1:
-			obscene = new Obscene("spq-na-2", "-J7MJqvr34GTgjYChT65", true);
+			obscene = new Obscene("spq-na-2", "-J7MJqvr34GTgjYChT65", true, doLogData);
 			break;
 		case 2:
-			obscene = new Obscene("spq-eu-2", "-J7-wh2DSbt-4ppLMRpP", true);
+			obscene = new Obscene("spq-eu-2", "-J7-wh2DSbt-4ppLMRpP", true, doLogData);
 			break;
 		case 3:
-			obscene = new Obscene("spq-na-group", "-J7MJqvr34GTgjYChT65", true);
+			obscene = new Obscene("spq-na-group", "-J7MJqvr34GTgjYChT65", true, doLogData);
 			break;
 		case 4:
-			obscene = new Obscene("enderscup", "-JFQ23F7P1S01pAmACCf", false);
+			obscene = new Obscene("enderscup", "-JFQ23F7P1S01pAmACCf", false, doLogData);
+			break;
+		case 5:
+			obscene = new Obscene("marchmadness", "-JFQ23F7P1S01pAmACCf", false, doLogData);
 			break;
 		default:
 			System.err.println("Invalid Broadcast");
@@ -85,30 +94,30 @@ public class ProjectJefferson {
 			/* League of Legends */ 
 			String previousStatus = "stop";
 			int x = 0;
-			Player[] leftPlayers = new Player[5];
-			Player[] rightPlayers = new Player[5];
+			Player[] leftPlayers = new Player[numPlayers];
+			Player[] rightPlayers = new Player[numPlayers];
 			String timeOffset = "0m0s";
 			while(true) {
-				String status = obscene.getGameStatus();
+				String status = /*obscene.getGameStatus();*/ "start";
 				if(status.equals("start")){
 					if(obscene.isTimeOffsetChanged()){
 						x=0;
 						timeOffset = obscene.getTimeOffset();
 					}
 					if(previousStatus.equals("stop")){
-					  ExperienceAndOffsetsPlayerLocator locator = new ExperienceAndOffsetsPlayerLocator();
+					  ExperienceAndOffsetsPlayerLocator locator = new ExperienceAndOffsetsPlayerLocator(numPlayers);
 					  //PlayerListPlayerLocator locator = new PlayerListPlayerLocator();
 			          ArrayList<Integer> allPlayers = locator.getPlayerAddresses();
 			          int i = 0;
 			          System.out.println("Left team");
-			          for(Integer playerOffset: allPlayers.subList(0, 5)) {
+			          for(Integer playerOffset: allPlayers.subList(0, numPlayers)) {
 			            int thisPlayer = i++;
 			            leftPlayers[thisPlayer] = new Player("Left", "" + thisPlayer, playerOffset);
 			            System.out.println(" " + i + ": " + String.format("0x%08X", playerOffset));
 			          }
 			          i = 0;
 			          System.out.println("Right team");
-			          for(Integer playerOffset: allPlayers.subList(5, 10)) {
+			          for(Integer playerOffset: allPlayers.subList(numPlayers, numPlayers*2)) {
 			            int thisPlayer = i++;
 			            rightPlayers[thisPlayer] = new Player("Right", "" + thisPlayer, playerOffset);
 			            System.out.println(" " + i + ": " + String.format("0x%08X", playerOffset));
@@ -135,8 +144,8 @@ public class ProjectJefferson {
 						StatEntry totalRightGold = Player.getTotalStatFromPlayers(rightPlayers, new IntStat("right_gold", PlayerStats.TOTAL_GOLD));
 						gameLog.put("left", leftStats);
 						gameLog.put("right", rightStats);
-						gameData.put("game_time", convertTimeToString(x*1000, timeOffset));
-						gameLog.put("time", convertTimeToString(x*1000, timeOffset));
+						gameData.put("game_time", convertTimeToString(x*100, timeOffset));
+						gameLog.put("time", convertTimeToString(x*100, timeOffset));
 						gameLog.put(totalLeftGold.getName(), totalLeftGold.getValue());
 						gameLog.put(totalRightGold.getName(), totalRightGold.getValue());
 						gameData.put("game_log", gameLog);
@@ -154,7 +163,7 @@ public class ProjectJefferson {
 					x++;
 					long endTime = Calendar.getInstance().getTimeInMillis();
 					if(endTime - startTime >= 0){
-						Thread.sleep(1000 - (endTime - startTime));
+						Thread.sleep(100 - (endTime - startTime));
 					}
 				}
 				else if(status.equals("pause")){

@@ -27,14 +27,16 @@ public class Obscene implements Runnable {
 	public LinkedList<HashMap<String, Object>> firebaseQueue;
 	public boolean timeOffsetChanged;
 	public boolean useRemoteTime;
+	public boolean doLogData;
 	public Semaphore firebaseQueueSync;
 
-	public Obscene(String broadcastSlug, String widgetId, boolean useRemoteTime){
+	public Obscene(String broadcastSlug, String widgetId, boolean useRemoteTime, boolean doLogData){
 		this.broadcastSlug = broadcastSlug;
 		this.widgetId = widgetId;
 		this.firebaseQueue = new LinkedList<HashMap<String, Object>>();
 		this.firebaseQueueSync = new Semaphore(1);
 		this.useRemoteTime = useRemoteTime;
+		this.doLogData = doLogData;
 		configureFirebase();
 	}
 	
@@ -143,8 +145,10 @@ public class Obscene implements Runnable {
 		activeMatchGameInfo.child("/game_time").setValue(entry.get("game_time"));
 		if((Integer)entry.get("upload_type") == 1){
 			activeMatchPlayerStats.setValue(entry.get("player_stats"));
-			Firebase newLogEntry = activeMatchGameLog.push();
-			newLogEntry.setValue(entry.get("game_log"));
+			if(doLogData){
+				Firebase newLogEntry = activeMatchGameLog.push();
+				newLogEntry.setValue(entry.get("game_log"));
+			}
 		}
 	}
 	
