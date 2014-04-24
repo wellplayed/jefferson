@@ -42,6 +42,7 @@ abstract class PlayerLocator {
   }
 
   protected Integer searchForPattern(HashMap<Integer, Integer> pattern) {
+	System.out.println("Searching...");
     ArrayList<Integer> addresses = new ArrayList<Integer>();
     int divider = 512;
     int blockSize = (playerBlockEnd - playerBlockStart)/divider;
@@ -54,6 +55,7 @@ abstract class PlayerLocator {
       for(int i = 0; i < blockSize; i += 0x4){
         boolean match = true;
         for(Map.Entry<Integer, Integer> entry: pattern.entrySet()) {
+        	
           if(i + entry.getKey() >= blockSize+playerSize) {
             match = false;
             break;

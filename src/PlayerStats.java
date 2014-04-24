@@ -122,7 +122,21 @@ public class PlayerStats {
   };
 
   public static Stat[] LOGGED_STATS = {
-      new IntStat("Total Gold", TOTAL_GOLD)
+      new IntStat("Total Gold", TOTAL_GOLD),
+      new IntStat("Kills", KILLS),
+      new IntStat("Deaths", DEATHS),
+      new IntStat("Assists", ASSISTS),
+      new IntStat("Spell Q Level", SPELL_Q_LEVEL),
+      new IntStat("Spell W Level", SPELL_W_LEVEL),
+      new IntStat("Spell E Level", SPELL_E_LEVEL),
+      new IntStat("Spell R Level", SPELL_R_LEVEL),
+      new IntStat("Item 0 ID", ITEM0),
+      new IntStat("Item 1 ID", ITEM1),
+      new IntStat("Item 2 ID", ITEM2),
+      new IntStat("Item 3 ID", ITEM3),
+      new IntStat("Item 4 ID", ITEM4),
+      new IntStat("Item 5 ID", ITEM5),
+      new IntStat("Item 6 ID", ITEM6)
   };
 	
 	public static enum DATA_TYPE {INTEGER, FLOAT, STRING};
@@ -134,4 +148,18 @@ public class PlayerStats {
 	public static final int[] OLD_LOGGED_STATS = {TOTAL_GOLD};
 	public static final String[] LOGGED_STAT_NAMES = {"Total Gold"};
 	public static final DATA_TYPE[] LOGGED_STAT_DATA_TYPES = {DATA_TYPE.INTEGER};
+	
+	public static void main(String[] args){
+		for(int i=0; i<STATS.length; i++){
+			String type = "";
+			if(STATS[i].getClass().getName().equals("IntStat")){
+				type = "0";
+			}else if(STATS[i].getClass().getName().equals("FloatStat")){
+				type= "1";
+			}else{
+				type="2";
+			}
+			System.out.println("{\"name\":\"" + STATS[i].name + "\",\"offset\":\"" +  String.format("0x%03X", STATS[i].offset) + "\", \"log\" : false, \"type\": " + type + "}," );
+		}
+	}
 }

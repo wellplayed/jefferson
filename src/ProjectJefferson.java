@@ -1,4 +1,5 @@
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -46,18 +47,18 @@ public class ProjectJefferson {
 		SC2Calibration sc2cal = null;
 		System.out.println("Welcome to ProjectJefferson");
 		System.out.print("1 - League of Legends\n2 - Starcraft 2\nPlease Select a Game: ");
+		String jeffersonId = "jeffTest";
 		int game = s.nextInt();
 		int numPlayers = 5;
 		boolean doLogData;
 		switch(game){
 		case 1:
-			MemoryAccess.setProcessName("League of Legends (TM) Client");
 			System.out.print("Number of players per team: ");
 			numPlayers = s.nextInt();
 			break;
 		case 2:
-			MemoryAccess.setProcessName("Starcraft II");
-			sc2cal = new SC2Calibration();
+			//MemoryAccess.setProcessName("Starcraft II");
+			//sc2cal = new SC2Calibration();
 			break;
 		default:
 			System.err.println("Invalid Game");
@@ -65,23 +66,26 @@ public class ProjectJefferson {
 		}
 		System.out.print("1 - Data Log On\n2 - Data Log Off\nEnable Data Log: ");
 		doLogData = (s.nextInt() == 1)?true:false;
-		System.out.print("\n1 - SPQ-NA-2\n2 - SPQ-EU-2\n3 - SPQ-NA-Group\n4 - Enders Cup\nPlease select a broadcast:");
+		System.out.print("\n1 - SPQ-NA-2\n2 - SPQ-EU-2\n3 - SPQ-NA-Group\n4 - Enders Cup\n5 - March Matchness\n6 - LPL Demo\nPlease select a broadcast:");
 		int broadcast = s.nextInt();
 		switch(broadcast){
 		case 1:
-			obscene = new Obscene("spq-na-2", "-J7MJqvr34GTgjYChT65", true, doLogData);
+			obscene = new Obscene(jeffersonId, "spq-na-2", "-J7MJqvr34GTgjYChT65", true, doLogData);
 			break;
 		case 2:
-			obscene = new Obscene("spq-eu-2", "-J7-wh2DSbt-4ppLMRpP", true, doLogData);
+			obscene = new Obscene(jeffersonId, "spq-eu-2", "-J7-wh2DSbt-4ppLMRpP", true, doLogData);
 			break;
 		case 3:
-			obscene = new Obscene("spq-na-group", "-J7MJqvr34GTgjYChT65", true, doLogData);
+			obscene = new Obscene(jeffersonId, "spq-na-group", "-J7MJqvr34GTgjYChT65", true, doLogData);
 			break;
 		case 4:
-			obscene = new Obscene("enderscup", "-JFQ23F7P1S01pAmACCf", false, doLogData);
+			obscene = new Obscene(jeffersonId, "enderscup", "-JFQ23F7P1S01pAmACCf", false, doLogData);
 			break;
 		case 5:
-			obscene = new Obscene("marchmadness", "-JFQ23F7P1S01pAmACCf", false, doLogData);
+			obscene = new Obscene(jeffersonId, "marchmadness", "-JGzfl8xkbygLZpM8Pcv", false, doLogData);
+			break;
+		case 6:
+			obscene = new Obscene(jeffersonId, "lpl-demo", "-JL1erLh5ey6IyPC_vTx", false, doLogData);
 			break;
 		default:
 			System.err.println("Invalid Broadcast");
@@ -98,13 +102,16 @@ public class ProjectJefferson {
 			Player[] rightPlayers = new Player[numPlayers];
 			String timeOffset = "0m0s";
 			while(true) {
-				String status = /*obscene.getGameStatus();*/ "start";
+				String status = obscene.getGameStatus();
+				//String status = "start";
 				if(status.equals("start")){
+					
 					if(obscene.isTimeOffsetChanged()){
 						x=0;
 						timeOffset = obscene.getTimeOffset();
 					}
 					if(previousStatus.equals("stop")){
+					  MemoryAccess.setProcessName("League of Legends (TM) Client");
 					  ExperienceAndOffsetsPlayerLocator locator = new ExperienceAndOffsetsPlayerLocator(numPlayers);
 					  //PlayerListPlayerLocator locator = new PlayerListPlayerLocator();
 			          ArrayList<Integer> allPlayers = locator.getPlayerAddresses();
@@ -124,46 +131,42 @@ public class ProjectJefferson {
 			          }
 					}
 					long startTime = Calendar.getInstance().getTimeInMillis();
-					if(x%5==0){
-						HashMap<String, Object> gameData = new HashMap<String, Object>();
-						HashMap<String, Object> leftStats = new HashMap<String, Object>();
-						HashMap<String, Object> rightStats = new HashMap<String, Object>();
-						HashMap<String, Object> teamData = new HashMap<String, Object>();
-						HashMap<String, Object> fullLeftStats = new HashMap<String, Object>();
-						HashMap<String, Object> fullRightStats = new HashMap<String, Object>();
-						HashMap<String, Object> gameLog = new HashMap<String, Object>();
-						for(int i=0; i<leftPlayers.length; i++){
-							fullLeftStats.put("" + i, statListToMap(leftPlayers[i].getStats()));
-							fullRightStats.put("" + i, statListToMap(rightPlayers[i].getStats()));
-							leftStats.put("" + i, statListToMap(leftPlayers[i].getLoggedStats()));
-							rightStats.put("" + i, statListToMap(rightPlayers[i].getLoggedStats()));
-						}
-						teamData.put("left",  fullLeftStats);
-						teamData.put("right", fullRightStats);
-						StatEntry totalLeftGold = Player.getTotalStatFromPlayers(leftPlayers, new IntStat("left_gold", PlayerStats.TOTAL_GOLD));
-						StatEntry totalRightGold = Player.getTotalStatFromPlayers(rightPlayers, new IntStat("right_gold", PlayerStats.TOTAL_GOLD));
-						gameLog.put("left", leftStats);
-						gameLog.put("right", rightStats);
-						gameData.put("game_time", convertTimeToString(x*100, timeOffset));
-						gameLog.put("time", convertTimeToString(x*100, timeOffset));
-						gameLog.put(totalLeftGold.getName(), totalLeftGold.getValue());
-						gameLog.put(totalRightGold.getName(), totalRightGold.getValue());
-						gameData.put("game_log", gameLog);
-						gameData.put("player_stats", teamData);
-						gameData.put("upload_type", 1);
-						System.out.println(gameData);
-						obscene.queueData(gameData);
-					}else{
-						/*HashMap<String, Object> gameData = new HashMap<String, Object>();
-						gameData.put("game_time", convertTimeToString(x*1000, timeOffset));
-						gameData.put("upload_type", 0);
-						System.out.println(gameData);
-						obscene.queueData(gameData);*/
+					HashMap<String, Object> gameData = new HashMap<String, Object>();
+					HashMap<String, Object> leftStats = new HashMap<String, Object>();
+					HashMap<String, Object> rightStats = new HashMap<String, Object>();
+					HashMap<String, Object> teamData = new HashMap<String, Object>();
+					HashMap<String, Object> fullLeftStats = new HashMap<String, Object>();
+					HashMap<String, Object> fullRightStats = new HashMap<String, Object>();
+					HashMap<String, Object> leftPlayersMap = new HashMap<String, Object>();
+					HashMap<String, Object> rightPlayersMap = new HashMap<String, Object>();
+					HashMap<String, Object> gameLog = new HashMap<String, Object>();
+					for(int i=0; i<leftPlayers.length; i++){
+						fullLeftStats.put("" + i, statListToMap(leftPlayers[i].getStats()));
+						fullRightStats.put("" + i, statListToMap(rightPlayers[i].getStats()));
+						leftPlayersMap.put("" + i, statListToMap(leftPlayers[i].getLoggedStats()));
+						rightPlayersMap.put("" + i, statListToMap(rightPlayers[i].getLoggedStats()));
 					}
+					teamData.put("left",  fullLeftStats);
+					teamData.put("right", fullRightStats);
+					StatEntry totalLeftGold = Player.getTotalStatFromPlayers(leftPlayers, new IntStat("gold", PlayerStats.TOTAL_GOLD));
+					StatEntry totalRightGold = Player.getTotalStatFromPlayers(rightPlayers, new IntStat("gold", PlayerStats.TOTAL_GOLD));
+					leftStats.put(totalLeftGold.getName(), totalLeftGold.getValue());
+					rightStats.put(totalRightGold.getName(), totalRightGold.getValue());
+					leftStats.put("players",leftPlayersMap);
+					rightStats.put("players",rightPlayersMap);
+					gameLog.put("left", leftStats);
+					gameLog.put("right", rightStats);
+					gameData.put("game_time", convertTimeToString(x*5000, timeOffset));
+					gameLog.put("time", convertTimeToString(x*5000, timeOffset));
+					gameData.put("game_log", gameLog);
+					gameData.put("player_stats", teamData);
+					gameData.put("upload_type", 1);
+					System.out.println(gameData);
+					obscene.queueData(gameData);
 					x++;
 					long endTime = Calendar.getInstance().getTimeInMillis();
 					if(endTime - startTime >= 0){
-						Thread.sleep(100 - (endTime - startTime));
+						Thread.sleep(5000 - (endTime - startTime));
 					}
 				}
 				else if(status.equals("pause")){
@@ -181,38 +184,32 @@ public class ProjectJefferson {
 			SC2Player playerOne = null;
 			SC2Player playerTwo = null;
 			String timeOffset = "0m0s";
+			String username = System.getProperty("user.name");
 			while(true) {
 				String status = obscene.getGameStatus();
 				if(status.equals("start")){
-					if(obscene.isTimeOffsetChanged()){
-						x=0;
-						timeOffset = obscene.getTimeOffset();
-					}
-					if(previousStatus.equals("stop")){
-						playerOne = new SC2Player("PlayerOne", sc2cal.getPlayerAddresses().get(0));
-						playerTwo = new SC2Player("PlayerTwo", sc2cal.getPlayerAddresses().get(1));
-					}
+					String map = obscene.getMapName();
 					long startTime = Calendar.getInstance().getTimeInMillis();
-					if(x%1==0){
-						HashMap<String, Object> gameData = new HashMap<String, Object>();
-						HashMap<String, Object> gameLog = new HashMap<String, Object>();
-						HashMap<String, Object> playerData = new HashMap<String, Object>();
+					HashMap<String, Object> gameData = new HashMap<String, Object>();
+					HashMap<String, Object> gameLog = new HashMap<String, Object>();
+					HashMap<String, Object> playerData = new HashMap<String, Object>();
+					HashMap<String, Object> playerOneData = SC2JSONParser.parseSC2Player("C:/Users/" + username + "/Documents/StarCraft II/UserLogs/" + obscene.getMapName() + "/DataLog_Player1.txt");
+					HashMap<String, Object> playerTwoData = SC2JSONParser.parseSC2Player("C:/Users/" + username + "/Documents/StarCraft II/UserLogs/" + obscene.getMapName() + "/DataLog_Player1.txt");
 
-						playerData.put("0", statListToMap(playerOne.getStats()));
-						playerData.put("1", statListToMap(playerTwo.getStats()));
-						
-						gameLog.put("0", statListToMap(playerOne.getLoggedStats()));
-						gameLog.put("1", statListToMap(playerTwo.getLoggedStats()));
-						gameLog.put("time", convertTimeToString(x*5000, timeOffset));
-						
-						gameData.put("game_time", convertTimeToString(x*5000, timeOffset));
-						gameData.put("player_stats", playerData);
-						gameData.put("game_log", gameLog);
-						gameData.put("upload_type", 1);
-						
-						System.out.println(gameData);
-						obscene.queueData(gameData);
-					}
+					playerData.put("0", playerOneData);
+					playerData.put("1", playerTwoData);
+					
+					gameLog.put("0", playerOneData);
+					gameLog.put("1", playerTwoData);
+					gameLog.put("time", convertTimeToString(x*5000, timeOffset));
+					
+					gameData.put("game_time", convertTimeToString(x*5000, timeOffset));
+					gameData.put("player_stats", playerData);
+					gameData.put("game_log", gameLog);
+					gameData.put("upload_type", 1);
+					
+					System.out.println(gameData);
+					obscene.queueData(gameData);
 					x++;
 					long endTime = Calendar.getInstance().getTimeInMillis();
 					if(endTime - startTime >= 0){

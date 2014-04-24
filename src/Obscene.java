@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -13,14 +14,18 @@ public class Obscene implements Runnable {
 	
 	public static final String FIREBASE_BASE_URL = "https://vin-obscene.firebaseio.com/broadcasts/";
 	public String broadcastSlug;
+	public String jeffersonId;
 	public String widgetId;
 	public Firebase fb;
 	public Firebase activeSeries;
-	public Firebase activeMatch;
-	public Firebase activeMatchPlayerStats;
-	public Firebase activeMatchGameLog;
-	public Firebase activeMatchGameInfo;
+	public Firebase activeGame;
+	public Firebase activeGamePlayerStats;
+	public Firebase activeGameLog;
+	public Firebase activeGameInfo;
+	public Firebase activeMap;
+	public Firebase jeffersonRedundancy;
 	public String activeMatchSlug = "";
+	public String activeMapName;
 	public String status = "reset";
 	public String gameTimeMark = "0m0s";
 	public String timeOffset = "0m0s"; 
@@ -28,10 +33,12 @@ public class Obscene implements Runnable {
 	public boolean timeOffsetChanged;
 	public boolean useRemoteTime;
 	public boolean doLogData;
+	public boolean jeffersonUpload;
 	public Semaphore firebaseQueueSync;
 
-	public Obscene(String broadcastSlug, String widgetId, boolean useRemoteTime, boolean doLogData){
+	public Obscene(String jeffersonId, String broadcastSlug, String widgetId, boolean useRemoteTime, boolean doLogData){
 		this.broadcastSlug = broadcastSlug;
+		this.jeffersonId = jeffersonId;
 		this.widgetId = widgetId;
 		this.firebaseQueue = new LinkedList<HashMap<String, Object>>();
 		this.firebaseQueueSync = new Semaphore(1);
@@ -54,11 +61,40 @@ public class Obscene implements Runnable {
 		            	for(int i=0; i<dataList.size(); i++){
 		            		if(((Map)dataList.get(i)).get("active") != null){
 			            		if(((Map)dataList.get(i)).get("active").toString().equals("true")){
-			            			if(activeMatch == null || !activeMatch.toString().equals(activeSeries.toString() + "/" + i)){
-			            				activeMatch = activeSeries.child("/" + i);
-			            				activeMatchPlayerStats = fb.child("/match_player_stats/" + activeMatchSlug + "/" + i);
-			            				activeMatchGameLog = fb.child("/match_game_log/" + activeMatchSlug + "/" + i);
-			            				activeMatchGameInfo = fb.child("/match_game_info/" + activeMatchSlug + "/" + i);
+			            			if(activeGame == null || !activeGame.toString().equals(activeSeries.toString() + "/" + i)){
+			            				activeGame = activeSeries.child("/" + i);
+			            				activeGamePlayerStats = fb.child("/match_player_stats/" + activeMatchSlug + "/" + i);
+			            				activeGameLog = fb.child("/match_game_log/" + activeMatchSlug + "/" + i);
+			            				activeGameInfo = fb.child("/match_game_info/" + activeMatchSlug + "/" + i);
+			            				activeGame.child("/map_id").addValueEventListener(new ValueEventListener(){
+											@Override
+											public void onDataChange(DataSnapshot snapshot) {
+												try{
+												fb.child("/map/" + snapshot.getValue().toString() + "/name").addValueEventListener(new ValueEventListener(){
+													@Override
+													public void onDataChange(DataSnapshot snapshot) {
+														activeMapName = snapshot.getValue().toString();
+														System.out.println("Map: "+ activeMapName);
+													}
+
+													@Override
+													public void onCancelled() {
+														// TODO Auto-generated method stub
+														
+													}
+												});
+												}catch(Exception e){
+													System.out.println("Map is null");
+												}
+												
+											}
+
+											@Override
+											public void onCancelled() {
+												
+											}
+			            					
+			            				});
 			            				try {
 											firebaseQueueSync.acquire();
 											firebaseQueue = new LinkedList<HashMap<String, Object>>();
@@ -110,6 +146,18 @@ public class Obscene implements Runnable {
 		        System.err.println("Listener was cancelled");
 		    }
 		});
+		
+		/*fb.child("/jefferson/status").addValueEventListener(new ValueEventListener(){
+			 @Override
+			    public void onDataChange(DataSnapshot snapshot) {
+			    	status = snapshot.getValue().toString();
+			    }
+
+			    @Override
+			    public void onCancelled() {
+			        System.err.println("Listener was cancelled");
+			    }
+		});*/
 		if(this.useRemoteTime){
 			fb.child("/widget/" + widgetId + "/config/-J-rsf0DZNOFdrg1Jsdz/game_time_mark").addValueEventListener(new ValueEventListener() {
 			    @Override
@@ -123,6 +171,29 @@ public class Obscene implements Runnable {
 			    }
 			});
 		}
+		
+		/*fb.child("/Jefferson").addValueEventListener(new ValueEventListener(){
+			@Override
+		    public void onDataChange(DataSnapshot snapshot) {
+				Calendar c = Calendar.getInstance();
+				boolean needUpload = true;
+				ArrayList jeffersonList = (ArrayList)snapshot.getValue();
+		    	for(int i=0; i<jeffersonList.size(); i++){
+		    		if(!((Map)jeffersonList.get(i)).get("id").equals(jeffersonId)){
+		    			 if(c.getTimeInMillis() - Long.parseLong(((Map)jeffersonList.get(i)).get("time").toString()) < 500){
+		    				 needUpload = false;
+		    			 }
+		    		}
+		    	}
+		    	this.
+		    }
+
+		    @Override
+		    public void onCancelled() {
+		        
+		    }
+		});*/
+		
 	}
 	
 	public boolean isTimeOffsetChanged(){
@@ -141,12 +212,16 @@ public class Obscene implements Runnable {
 		return status;
 	}
 	
+	public String getMapName(){
+		return activeMapName;
+	}
+	
 	public void logData(HashMap<String, Object> entry){
-		activeMatchGameInfo.child("/game_time").setValue(entry.get("game_time"));
+		activeGameInfo.child("/game_time").setValue(entry.get("game_time"));
 		if((Integer)entry.get("upload_type") == 1){
-			activeMatchPlayerStats.setValue(entry.get("player_stats"));
+			activeGamePlayerStats.setValue(entry.get("player_stats"));
 			if(doLogData){
-				Firebase newLogEntry = activeMatchGameLog.push();
+				Firebase newLogEntry = activeGameLog.push();
 				newLogEntry.setValue(entry.get("game_log"));
 			}
 		}
@@ -166,6 +241,7 @@ public class Obscene implements Runnable {
 	public void run() {
 		while(true){
 			try {
+				long startTime = Calendar.getInstance().getTimeInMillis();
 				firebaseQueueSync.acquire();
 				boolean queueReady = !firebaseQueue.isEmpty();
 				firebaseQueueSync.release();
@@ -174,9 +250,12 @@ public class Obscene implements Runnable {
 					HashMap<String, Object> dataToLog = firebaseQueue.pop();
 					firebaseQueueSync.release();
 					logData(dataToLog);
+					long endTime = Calendar.getInstance().getTimeInMillis();
+					System.out.println("Uploaded in " + (endTime - startTime) + " ms");
 				}else{
-					Thread.sleep(250);
+					Thread.sleep(100);
 				}
+				
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
