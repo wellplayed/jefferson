@@ -1,0 +1,4 @@
+broadcast=>NACC
+firebaseBaseUrl=>https://vin-obscene.firebaseio.com/broadcasts/nacc
+game=>lol
+playersPerTeam=>5

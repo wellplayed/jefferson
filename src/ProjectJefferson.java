@@ -1,6 +1,11 @@
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Scanner;
@@ -41,55 +46,91 @@ public class ProjectJefferson {
     	return hours + ":" + minutes + ":" + seconds;
     }
 	
-	public static void main(String[] args) throws InterruptedException {
+	public static void main(String[] args) throws InterruptedException, IOException {
 		Scanner s = new Scanner(System.in);
 		Obscene obscene = null;
-		SC2Calibration sc2cal = null;
 		System.out.println("Welcome to ProjectJefferson");
+		
+		//FILE READING
+		System.out.println("Working Directory = " +
+	              System.getProperty("user.dir"));
+		System.out.println("Select config file from /configs:");
+		File folder = new File("configs");
+		File[] listOfFiles = folder.listFiles();
+
+	    for (int i = 0; i < listOfFiles.length; i++) {
+	        System.out.println((i+1) + ". " + listOfFiles[i].getName());
+	    }
+	    
+		int configNum = s.nextInt();
+		HashMap<String, String> config = new HashMap<String, String>();
+		
+		System.out.println("You have selected #" + configNum + ": " + listOfFiles[configNum-1].getName());
+		
+		BufferedReader br;
+		try {
+			br = new BufferedReader(new FileReader(listOfFiles[configNum-1]));
+			String line;
+			while ((line = br.readLine()) != null) {
+				String[] lineList = line.split("=>");
+				System.out.println("Config variable '" + lineList[0] + "' set to '" + lineList[1] + "'");
+				config.put(lineList[0],lineList[1]);
+			}
+			br.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println("------------");
+		//DONE FILE READING
+
 		System.out.print("1 - League of Legends\n2 - Starcraft 2\nPlease Select a Game: ");
 		String jeffersonId = "jeffTest";
 		int game = s.nextInt();
 		int numPlayers = 5;
 		boolean doLogData;
 		switch(game){
-		case 1:
-			System.out.print("Number of players per team: ");
-			numPlayers = s.nextInt();
-			break;
-		case 2:
-			//MemoryAccess.setProcessName("Starcraft II");
-			//sc2cal = new SC2Calibration();
-			break;
-		default:
-			System.err.println("Invalid Game");
-			System.exit(0);
+			case 1:
+				System.out.print("Number of players per team: ");
+				numPlayers = s.nextInt();
+				break;
+			case 2:
+				//MemoryAccess.setProcessName("Starcraft II");
+				//sc2cal = new SC2Calibration();
+				break;
+			default:
+				System.err.println("Invalid Game");
+				System.exit(0);
 		}
 		System.out.print("1 - Data Log On\n2 - Data Log Off\nEnable Data Log: ");
 		doLogData = (s.nextInt() == 1)?true:false;
-		System.out.print("\n1 - SPQ-NA-2\n2 - SPQ-EU-2\n3 - SPQ-NA-Group\n4 - Enders Cup\n5 - March Matchness\n6 - LPL Demo\nPlease select a broadcast:");
+		System.out.print("\n1 - SPQ-NA-2\n2 - SPQ-EU-2\n3 - SPQ-NA-Group\n4 - Enders Cup\n5 - March Matchness\n6 - LPL Demo\n7 - Intel Cup (Omen Encounter)\nPlease select a broadcast:");
 		int broadcast = s.nextInt();
 		switch(broadcast){
-		case 1:
-			obscene = new Obscene(jeffersonId, "spq-na-2", "-J7MJqvr34GTgjYChT65", true, doLogData);
-			break;
-		case 2:
-			obscene = new Obscene(jeffersonId, "spq-eu-2", "-J7-wh2DSbt-4ppLMRpP", true, doLogData);
-			break;
-		case 3:
-			obscene = new Obscene(jeffersonId, "spq-na-group", "-J7MJqvr34GTgjYChT65", true, doLogData);
-			break;
-		case 4:
-			obscene = new Obscene(jeffersonId, "enderscup", "-JFQ23F7P1S01pAmACCf", false, doLogData);
-			break;
-		case 5:
-			obscene = new Obscene(jeffersonId, "marchmadness", "-JGzfl8xkbygLZpM8Pcv", false, doLogData);
-			break;
-		case 6:
-			obscene = new Obscene(jeffersonId, "lpl-demo", "-JL1erLh5ey6IyPC_vTx", false, doLogData);
-			break;
-		default:
-			System.err.println("Invalid Broadcast");
-			System.exit(0);
+			case 1:
+				obscene = new Obscene(jeffersonId, "spq-na-2", "-J7MJqvr34GTgjYChT65", true, doLogData);
+				break;
+			case 2:
+				obscene = new Obscene(jeffersonId, "spq-eu-2", "-J7-wh2DSbt-4ppLMRpP", true, doLogData);
+				break;
+			case 3:
+				obscene = new Obscene(jeffersonId, "spq-na-group", "-J7MJqvr34GTgjYChT65", true, doLogData);
+				break;
+			case 4:
+				obscene = new Obscene(jeffersonId, "enderscup", "-JFQ23F7P1S01pAmACCf", false, doLogData);
+				break;
+			case 5:
+				obscene = new Obscene(jeffersonId, "marchmadness", "-JGzfl8xkbygLZpM8Pcv", false, doLogData);
+				break;
+			case 6:
+				obscene = new Obscene(jeffersonId, "lpl-demo", "-JL1erLh5ey6IyPC_vTx", false, doLogData);
+				break;
+			case 7:
+				obscene = new Obscene(jeffersonId, "intelcup", "-Jb1qHEnmo5_uIooiND5", false, doLogData);
+				break;
+			default:
+				System.err.println("Invalid Broadcast");
+				System.exit(0);
 		}
 		Thread obsceneThread = new Thread(obscene);
 		obsceneThread.start();
@@ -102,8 +143,8 @@ public class ProjectJefferson {
 			Player[] rightPlayers = new Player[numPlayers];
 			String timeOffset = "0m0s";
 			while(true) {
-				String status = obscene.getGameStatus();
-				//String status = "start";
+				//String status = obscene.getGameStatus();
+				String status = "start";
 				if(status.equals("start")){
 					
 					if(obscene.isTimeOffsetChanged()){

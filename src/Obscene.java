@@ -49,7 +49,7 @@ public class Obscene implements Runnable {
 	
 	public void configureFirebase(){
 		fb = new Firebase(FIREBASE_BASE_URL + broadcastSlug);
-		fb.child("/settings/active_series_id").addValueEventListener(new ValueEventListener() {
+		fb.child("/settings/stream_settings/stream_1/active_series_id").addValueEventListener(new ValueEventListener() {
 		    @Override
 		    public void onDataChange(DataSnapshot snapshot) {
 		    	activeMatchSlug = snapshot.getValue().toString();
@@ -63,9 +63,9 @@ public class Obscene implements Runnable {
 			            		if(((Map)dataList.get(i)).get("active").toString().equals("true")){
 			            			if(activeGame == null || !activeGame.toString().equals(activeSeries.toString() + "/" + i)){
 			            				activeGame = activeSeries.child("/" + i);
-			            				activeGamePlayerStats = fb.child("/match_player_stats/" + activeMatchSlug + "/" + i);
-			            				activeGameLog = fb.child("/match_game_log/" + activeMatchSlug + "/" + i);
-			            				activeGameInfo = fb.child("/match_game_info/" + activeMatchSlug + "/" + i);
+			            				activeGamePlayerStats = fb.child("/match_lol_player_stats/" + activeMatchSlug + "/" + i);
+			            				activeGameLog = fb.child("/match_lol_game_log/" + activeMatchSlug + "/" + i);
+			            				activeGameInfo = fb.child("/match_lol_game_info/" + activeMatchSlug + "/" + i);
 			            				activeGame.child("/map_id").addValueEventListener(new ValueEventListener(){
 											@Override
 											public void onDataChange(DataSnapshot snapshot) {
@@ -102,6 +102,7 @@ public class Obscene implements Runnable {
 										} catch (InterruptedException e) {
 											e.printStackTrace();
 										}
+			            				status = "stop";
 			            				System.out.println("Active Match Changed (Series: " + activeMatchSlug + ", Match: " + i + ")");
 			            				
 			            			}
