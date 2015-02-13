@@ -34,7 +34,6 @@ public class Obscene implements Runnable {
 	public LinkedList<HashMap<String, Object>> firebaseQueue;
 	public boolean timeOffsetChanged;
 	public boolean useRemoteTime;
-	public boolean doLogData;
 	public boolean jeffersonUpload;
 	public Semaphore firebaseQueueSync;
 
@@ -52,7 +51,6 @@ public class Obscene implements Runnable {
 		fb.child("/settings/stream_settings/stream_" + this.config.get("streamId") + "/active_series_id").addValueEventListener(new ValueEventListener() {
 		    @Override
 		    public void onDataChange(DataSnapshot snapshot) {
-		    	String prevGame = "";
 		    	activeSeriesId = snapshot.getValue().toString();
 		        activeSeriesMatches = fb.child("/series/" + snapshot.getValue().toString() + "/matches");
 		        activeSeriesMatches.addValueEventListener(new ValueEventListener() {
@@ -62,6 +60,7 @@ public class Obscene implements Runnable {
 		            	for(int i=0; i<dataList.size(); i++){
 		            		if(((Map)dataList.get(i)).get("active") != null){
 			            		if(((Map)dataList.get(i)).get("active").toString().equals("true")){
+			            			Boolean gameWasNull = activeGame == null;
 			            			if(activeGame == null || !activeGame.toString().equals(activeSeriesMatches.toString() + "/" + i)){
 			            				activeGame = activeSeriesMatches.child("/" + i);
 			            				activeGamePlayerStats = fb.child("/match_lol_player_stats/" + activeSeriesId + "/" + i);
@@ -103,7 +102,10 @@ public class Obscene implements Runnable {
 										} catch (InterruptedException e) {
 											e.printStackTrace();
 										}
-			            				clockState = "stopped";
+			            				if(!gameWasNull) {
+			            					clockState = "stopped";
+			            				}
+			            				gameWasNull = false;
 			            				System.out.println("Active Match Changed (Series: " + activeSeriesId + ", Match_index: " + i + ")");			            				
 			            			}
 			            		}
@@ -123,11 +125,16 @@ public class Obscene implements Runnable {
 		});
 		
 		//Watching for the game status to change
-		fb.child("/widget/" + this.config.get("gameWidgetId") + "/config/" + this.config.get("gameWidgetConfigId") + "/game_clock_state").addValueEventListener(new ValueEventListener() {
+		fb.child("/widget/" + this.config.get("gameWidgetId") + "/config/" + this.config.get("gameWidgetConfigId")).addValueEventListener(new ValueEventListener() {
 		    @Override
 		    public void onDataChange(DataSnapshot snapshot) {
-		    	clockState = (String)snapshot.getValue().toString();
-		    	System.out.println("Game clock state set to " + clockState);
+		    	clockState = snapshot.child("/game_clock_state").getValue().toString();
+		    	gameStartTimestamp = snapshot.child("/game_start_timestamp").getValue().toString();
+		    	gamePauseTimestamp = snapshot.child("/game_pause_timestamp").getValue().toString();
+		    	System.out.println("clockState: " + clockState);
+		    	System.out.println("gameStartTimestamp: " + gameStartTimestamp);
+		    	System.out.println("gamePauseTimestamp: " + gamePauseTimestamp);
+		    	System.out.println("Config snapshot: " + snapshot.getValue().toString());
 		    }
 
 		    @Override
@@ -135,35 +142,6 @@ public class Obscene implements Runnable {
 		        System.err.println("Listener was cancelled");
 		    }
 		});
-		
-		//Watch the game's UTC start time
-		fb.child("/widget/" + this.config.get("gameWidgetId") + "/config/" + this.config.get("gameWidgetConfigId") + "/game_start_timestamp").addValueEventListener(new ValueEventListener() {
-		    @Override
-		    public void onDataChange(DataSnapshot snapshot) {
-		    	String val = snapshot.getValue().toString();
-		    	gameStartTimestamp = val;
-		    	System.out.println("gameStartTimestamp set to " + gameStartTimestamp);
-		    }
-
-		    @Override
-		    public void onCancelled() {
-		        System.err.println("Listener was cancelled");
-		    }
-		});				
-		//Watch the game's UTC pause time
-		fb.child("/widget/" + this.config.get("gameWidgetId") + "/config/" + this.config.get("gameWidgetConfigId") + "/game_pause_timestamp").addValueEventListener(new ValueEventListener() {
-		    @Override
-		    public void onDataChange(DataSnapshot snapshot) {
-		    	String val = snapshot.getValue().toString();
-		    	gamePauseTimestamp = val;
-		    	System.out.println("gamePauseTimestamp set to " + gamePauseTimestamp);
-		    }
-
-		    @Override
-		    public void onCancelled() {
-		        System.err.println("Listener was cancelled");
-		    }
-		});		
 	}
 	
 	public boolean isTimeOffsetChanged(){
@@ -186,27 +164,31 @@ public class Obscene implements Runnable {
 		return clockState;
 	}
 	
-	public long getGameSeconds() {
-		if(clockState == "stopped") {
-			return Long.parseLong("0");
-		}
-		
-		long now = Calendar.getInstance().getTimeInMillis();
-		long startTimestampLong = Long.parseLong(gameStartTimestamp)*1000;
-		Date startDate = new Date(startTimestampLong);
+	public Long getGameSeconds() {
+		Long nowSeconds = Calendar.getInstance().getTimeInMillis()/1000;
+		Long startTimeSeconds = new Long(gameStartTimestamp);
+		Long startTimeMillis = startTimeSeconds*1000;
+		Date startDate = new Date(startTimeMillis);
 		Calendar startCalendar = Calendar.getInstance();
 		startCalendar.setTime(startDate);
-		if(clockState == "started") {
-			return (startCalendar.getTimeInMillis() - now) / 1000;
+		
+		System.out.println("nowSeconds:		 " + nowSeconds);
+		System.out.println("startTimeSeconds:	 " + startTimeSeconds);
+		
+		if(clockState.equals("started")) {
+			Long seconds = new Long((nowSeconds - startTimeSeconds));
+			System.out.println("seconds:" + seconds);
+			return seconds;
 		}
-		else if(clockState == "paused") {
+		else if(clockState.equals("paused")) {
 			long pauseTimestampLong = Long.parseLong(gamePauseTimestamp)*1000;
 			Date pauseDate = new Date(pauseTimestampLong);
 			Calendar pauseCalendar = Calendar.getInstance();
 			pauseCalendar.setTime(pauseDate);
-			return (startCalendar.getTimeInMillis() - pauseCalendar.getTimeInMillis() - now) / 1000;
+			return new Long((nowSeconds - startTimeSeconds - (pauseCalendar.getTimeInMillis()/1000) ));
 		}
-
+		
+		return Long.parseLong("0");
 	}
 	
 	public String getMapName(){
@@ -217,7 +199,7 @@ public class Obscene implements Runnable {
 		activeGameInfo.child("/game_time").setValue(entry.get("game_time"));
 		if((Integer)entry.get("upload_type") == 1){
 			activeGamePlayerStats.setValue(entry.get("player_stats"));
-			if(doLogData){
+			if(config.get("logData").equals("1")){
 				Firebase newLogEntry = activeGameLog.push();
 				newLogEntry.setValue(entry.get("game_log"));
 			}

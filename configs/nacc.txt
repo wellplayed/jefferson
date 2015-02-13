@@ -3,3 +3,4 @@ firebaseBaseUrl=>https://vin-obscene.firebaseio.com/broadcasts/nacc
 game=>lol
 playersPerTeam=>5
 gameWidgetId=>-JfUh5TSsduMkGNsPsIq
+logData=>1

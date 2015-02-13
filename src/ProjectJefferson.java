@@ -102,16 +102,24 @@ public class ProjectJefferson {
 			System.out.println("Using default gameWidgetConfigId of 0");
 			config.put("usesMaps", "0");
 		}
+
+		if(!config.containsKey("logData")) {
+			System.out.println("Using default logData of 0");
+			config.put("logData", "0");
+		}
 		
 		System.out.println("------------");
 		//DONE FILE READING
 
+		System.out.println("Game: " + config.get("game"));
 		obscene = new Obscene(config);
-			Thread obsceneThread = new Thread(obscene);
+		Thread obsceneThread = new Thread(obscene);
 		obsceneThread.start();
 		Thread.sleep(5000);
+		System.out.println("Done sleeping.");
 		Integer playersPerTeam = Integer.parseInt(config.get("playersPerTeam"));
-		if(config.get("game")=="lol"){
+		if(config.get("game").equals("lol")){
+			System.out.println("League of Legends!");
 			/* League of Legends */ 
 			String previousStatus = "stopped";
 			int x = 0;
@@ -120,6 +128,7 @@ public class ProjectJefferson {
 			String timeOffset = "0m0s";
 			while(true) {
 				String status = obscene.getGameClockState();
+				System.out.println("Status: " + status);
 				if(status.equals("started")){
 					if(previousStatus.equals("stopped")){
 					  MemoryAccess.setProcessName("League of Legends (TM) Client");
@@ -142,7 +151,6 @@ public class ProjectJefferson {
 					}
 					long startTime = Calendar.getInstance().getTimeInMillis();
 					long gameSeconds = obscene.getGameSeconds();
-					System.out.println("Game seconds: " + gameSeconds);
 					HashMap<String, Object> gameData = new HashMap<String, Object>();
 					HashMap<String, Object> leftStats = new HashMap<String, Object>();
 					HashMap<String, Object> rightStats = new HashMap<String, Object>();
@@ -168,8 +176,8 @@ public class ProjectJefferson {
 					rightStats.put("players",rightPlayersMap);
 					gameLog.put("left", leftStats);
 					gameLog.put("right", rightStats);
-					gameData.put("game_time", convertTimeToString(x*5000, timeOffset));
-					gameLog.put("time", convertTimeToString(x*5000, timeOffset));
+					gameData.put("game_time", convertTimeToString(gameSeconds*1000, timeOffset));
+					gameLog.put("time", convertTimeToString(gameSeconds*1000, timeOffset));
 					gameData.put("game_log", gameLog);
 					gameData.put("player_stats", teamData);
 					gameData.put("upload_type", 1);
