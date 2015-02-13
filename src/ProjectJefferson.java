@@ -49,11 +49,11 @@ public class ProjectJefferson {
 	public static void main(String[] args) throws InterruptedException, IOException {
 		Scanner s = new Scanner(System.in);
 		Obscene obscene = null;
+		String[] requiredConfigs = {"firebaseBaseUrl","playersPerTeam","game", "gameWidgetId"};
 		System.out.println("Welcome to ProjectJefferson");
 		
 		//FILE READING
-		System.out.println("Working Directory = " +
-	              System.getProperty("user.dir"));
+		System.out.println("Working Directory = " + System.getProperty("user.dir"));
 		System.out.println("Select config file from /configs:");
 		File folder = new File("configs");
 		File[] listOfFiles = folder.listFiles();
@@ -63,8 +63,7 @@ public class ProjectJefferson {
 	    }
 	    
 		int configNum = s.nextInt();
-		HashMap<String, String> config = new HashMap<String, String>();
-		
+		HashMap<String, String> config = new HashMap<String, String>();		
 		System.out.println("You have selected #" + configNum + ": " + listOfFiles[configNum-1].getName());
 		
 		BufferedReader br;
@@ -81,66 +80,38 @@ public class ProjectJefferson {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		for(int i = 0; i < requiredConfigs.length; i++) {
+			if(!config.containsKey(requiredConfigs[i])) {
+				System.out.println("ERROR: Missing config variable '" + requiredConfigs[i] + "'");
+			}
+		}
+		
+		//Default config
+		if(!config.containsKey("streamId")) {
+			System.out.println("Using default streamId of 1");
+			config.put("streamId", "1");
+		}
+		
+		if(!config.containsKey("gameWidgetConfigId")) {
+			System.out.println("Using default gameWidgetConfigId of default");
+			config.put("gameWidgetConfigId", "default");
+		}
+		
 		System.out.println("------------");
 		//DONE FILE READING
 
-		System.out.print("1 - League of Legends\n2 - Starcraft 2\nPlease Select a Game: ");
-		String jeffersonId = "jeffTest";
-		int game = s.nextInt();
-		int numPlayers = 5;
-		boolean doLogData;
-		switch(game){
-			case 1:
-				System.out.print("Number of players per team: ");
-				numPlayers = s.nextInt();
-				break;
-			case 2:
-				//MemoryAccess.setProcessName("Starcraft II");
-				//sc2cal = new SC2Calibration();
-				break;
-			default:
-				System.err.println("Invalid Game");
-				System.exit(0);
-		}
-		System.out.print("1 - Data Log On\n2 - Data Log Off\nEnable Data Log: ");
-		doLogData = (s.nextInt() == 1)?true:false;
-		System.out.print("\n1 - SPQ-NA-2\n2 - SPQ-EU-2\n3 - SPQ-NA-Group\n4 - Enders Cup\n5 - March Matchness\n6 - LPL Demo\n7 - Intel Cup (Omen Encounter)\nPlease select a broadcast:");
-		int broadcast = s.nextInt();
-		switch(broadcast){
-			case 1:
-				obscene = new Obscene(jeffersonId, "spq-na-2", "-J7MJqvr34GTgjYChT65", true, doLogData);
-				break;
-			case 2:
-				obscene = new Obscene(jeffersonId, "spq-eu-2", "-J7-wh2DSbt-4ppLMRpP", true, doLogData);
-				break;
-			case 3:
-				obscene = new Obscene(jeffersonId, "spq-na-group", "-J7MJqvr34GTgjYChT65", true, doLogData);
-				break;
-			case 4:
-				obscene = new Obscene(jeffersonId, "enderscup", "-JFQ23F7P1S01pAmACCf", false, doLogData);
-				break;
-			case 5:
-				obscene = new Obscene(jeffersonId, "marchmadness", "-JGzfl8xkbygLZpM8Pcv", false, doLogData);
-				break;
-			case 6:
-				obscene = new Obscene(jeffersonId, "lpl-demo", "-JL1erLh5ey6IyPC_vTx", false, doLogData);
-				break;
-			case 7:
-				obscene = new Obscene(jeffersonId, "intelcup", "-Jb1qHEnmo5_uIooiND5", false, doLogData);
-				break;
-			default:
-				System.err.println("Invalid Broadcast");
-				System.exit(0);
-		}
-		Thread obsceneThread = new Thread(obscene);
+		obscene = new Obscene(config);
+			Thread obsceneThread = new Thread(obscene);
 		obsceneThread.start();
 		Thread.sleep(5000);
-		if(game==1){
+		Integer playersPerTeam = Integer.parseInt(config.get("playersPerTeam"));
+		if(config.get("game")=="lol"){
 			/* League of Legends */ 
 			String previousStatus = "stop";
 			int x = 0;
-			Player[] leftPlayers = new Player[numPlayers];
-			Player[] rightPlayers = new Player[numPlayers];
+			Player[] leftPlayers = new Player[playersPerTeam];
+			Player[] rightPlayers = new Player[playersPerTeam];
 			String timeOffset = "0m0s";
 			while(true) {
 				//String status = obscene.getGameStatus();
@@ -153,19 +124,19 @@ public class ProjectJefferson {
 					}
 					if(previousStatus.equals("stop")){
 					  MemoryAccess.setProcessName("League of Legends (TM) Client");
-					  ExperienceAndOffsetsPlayerLocator locator = new ExperienceAndOffsetsPlayerLocator(numPlayers);
+					  ExperienceAndOffsetsPlayerLocator locator = new ExperienceAndOffsetsPlayerLocator(playersPerTeam);
 					  //PlayerListPlayerLocator locator = new PlayerListPlayerLocator();
 			          ArrayList<Integer> allPlayers = locator.getPlayerAddresses();
 			          int i = 0;
 			          System.out.println("Left team");
-			          for(Integer playerOffset: allPlayers.subList(0, numPlayers)) {
+			          for(Integer playerOffset: allPlayers.subList(0, playersPerTeam)) {
 			            int thisPlayer = i++;
 			            leftPlayers[thisPlayer] = new Player("Left", "" + thisPlayer, playerOffset);
 			            System.out.println(" " + i + ": " + String.format("0x%08X", playerOffset));
 			          }
 			          i = 0;
 			          System.out.println("Right team");
-			          for(Integer playerOffset: allPlayers.subList(numPlayers, numPlayers*2)) {
+			          for(Integer playerOffset: allPlayers.subList(playersPerTeam, playersPerTeam*2)) {
 			            int thisPlayer = i++;
 			            rightPlayers[thisPlayer] = new Player("Right", "" + thisPlayer, playerOffset);
 			            System.out.println(" " + i + ": " + String.format("0x%08X", playerOffset));
@@ -218,7 +189,7 @@ public class ProjectJefferson {
 				}
 				previousStatus = status;
 			}
-		}else if(game==2){
+		}else if(config.get("game")=="sc2"){
 			/* Starcraft 2 */ 
 			String previousStatus = "stop";
 			int x = 0;
@@ -227,7 +198,7 @@ public class ProjectJefferson {
 			String timeOffset = "0m0s";
 			String username = System.getProperty("user.name");
 			while(true) {
-				String status = obscene.getGameStatus();
+				String status = obscene.getGameClockState();
 				if(status.equals("start")){
 					String map = obscene.getMapName();
 					long startTime = Calendar.getInstance().getTimeInMillis();

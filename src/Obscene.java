@@ -1,3 +1,4 @@
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -13,9 +14,7 @@ import com.firebase.client.ValueEventListener;
 public class Obscene implements Runnable {
 	
 	public static final String FIREBASE_BASE_URL = "https://vin-obscene.firebaseio.com/broadcasts/";
-	public String broadcastSlug;
-	public String jeffersonId;
-	public String widgetId;
+	public HashMap<String, String> config;
 	public Firebase fb;
 	public Firebase activeSeries;
 	public Firebase activeGame;
@@ -24,10 +23,11 @@ public class Obscene implements Runnable {
 	public Firebase activeGameInfo;
 	public Firebase activeMap;
 	public Firebase jeffersonRedundancy;
-	public String activeMatchSlug = "";
+	public String activeSeriesId = "";
 	public String activeMapName;
-	public String status = "reset";
+	public String clockState = "stopped";
 	public String gameTimeMark = "0m0s";
+	public String gameStartTimestamp = "0";
 	public String timeOffset = "0m0s"; 
 	public LinkedList<HashMap<String, Object>> firebaseQueue;
 	public boolean timeOffsetChanged;
@@ -36,23 +36,21 @@ public class Obscene implements Runnable {
 	public boolean jeffersonUpload;
 	public Semaphore firebaseQueueSync;
 
-	public Obscene(String jeffersonId, String broadcastSlug, String widgetId, boolean useRemoteTime, boolean doLogData){
-		this.broadcastSlug = broadcastSlug;
-		this.jeffersonId = jeffersonId;
-		this.widgetId = widgetId;
+	public Obscene(HashMap<String, String> config){
+		this.config = config;
 		this.firebaseQueue = new LinkedList<HashMap<String, Object>>();
 		this.firebaseQueueSync = new Semaphore(1);
-		this.useRemoteTime = useRemoteTime;
-		this.doLogData = doLogData;
 		configureFirebase();
 	}
 	
 	public void configureFirebase(){
-		fb = new Firebase(FIREBASE_BASE_URL + broadcastSlug);
-		fb.child("/settings/stream_settings/stream_1/active_series_id").addValueEventListener(new ValueEventListener() {
+		fb = new Firebase(this.config.get("firebaseBaseUrl"));
+		
+		//Watching for changes in active series
+		fb.child("/settings/stream_settings/stream_" + this.config.get("streamId") + "/active_series_id").addValueEventListener(new ValueEventListener() {
 		    @Override
 		    public void onDataChange(DataSnapshot snapshot) {
-		    	activeMatchSlug = snapshot.getValue().toString();
+		    	activeSeriesId = snapshot.getValue().toString();
 		        activeSeries = fb.child("/series/" + snapshot.getValue().toString() + "/matches");
 		        activeSeries.addValueEventListener(new ValueEventListener() {
 		            @Override
@@ -63,9 +61,9 @@ public class Obscene implements Runnable {
 			            		if(((Map)dataList.get(i)).get("active").toString().equals("true")){
 			            			if(activeGame == null || !activeGame.toString().equals(activeSeries.toString() + "/" + i)){
 			            				activeGame = activeSeries.child("/" + i);
-			            				activeGamePlayerStats = fb.child("/match_lol_player_stats/" + activeMatchSlug + "/" + i);
-			            				activeGameLog = fb.child("/match_lol_game_log/" + activeMatchSlug + "/" + i);
-			            				activeGameInfo = fb.child("/match_lol_game_info/" + activeMatchSlug + "/" + i);
+			            				activeGamePlayerStats = fb.child("/match_lol_player_stats/" + activeSeriesId + "/" + i);
+			            				activeGameLog = fb.child("/match_lol_game_log/" + activeSeriesId + "/" + i);
+			            				activeGameInfo = fb.child("/match_lol_game_info/" + activeSeriesId + "/" + i);
 			            				activeGame.child("/map_id").addValueEventListener(new ValueEventListener(){
 											@Override
 											public void onDataChange(DataSnapshot snapshot) {
@@ -102,9 +100,8 @@ public class Obscene implements Runnable {
 										} catch (InterruptedException e) {
 											e.printStackTrace();
 										}
-			            				status = "stop";
-			            				System.out.println("Active Match Changed (Series: " + activeMatchSlug + ", Match: " + i + ")");
-			            				
+			            				clockState = "stopped";
+			            				System.out.println("Active Match Changed (Series: " + activeSeriesId + ", Match: " + i + ")");			            				
 			            			}
 			            		}
 		            		}
@@ -122,24 +119,12 @@ public class Obscene implements Runnable {
 		    }
 		});
 		
-		fb.child("/stream/1/events").addValueEventListener(new ValueEventListener() {
+		//Watching for the game status to change
+		fb.child("/widget/" + this.config.get("gameWidgetId") + "/config/" + this.config.get("gameWidgetConfigId") + "/game_clock_state").addValueEventListener(new ValueEventListener() {
 		    @Override
 		    public void onDataChange(DataSnapshot snapshot) {
-		    	ArrayList eventList = (ArrayList)snapshot.getValue();
-		    	for(int i=eventList.size()-1; i>=0; i--){
-			    	if(((Map)eventList.get(i)).get("widget_id").equals(widgetId)){
-			    		String event =  ((Map)eventList.get(eventList.size()-1)).get("event_id").toString();
-			    		if(event.equals("update") && !gameTimeMark.equals(timeOffset)){
-			    			timeOffset = gameTimeMark;
-			    			timeOffsetChanged=true;
-			    			System.out.println("Game Time Updated: " + timeOffset);
-			    		}else{
-			    			status = ((Map)eventList.get(eventList.size()-1)).get("event_id").toString();
-			    			System.out.println("Game " + status + "ed");
-			    		}
-			    		break;	
-			    	}
-		    	}
+		    	clockState = (String)snapshot.getValue().toString();
+		    	System.out.println("Game clock state set to " + clockState);
 		    }
 
 		    @Override
@@ -148,53 +133,21 @@ public class Obscene implements Runnable {
 		    }
 		});
 		
-		/*fb.child("/jefferson/status").addValueEventListener(new ValueEventListener(){
-			 @Override
-			    public void onDataChange(DataSnapshot snapshot) {
-			    	status = snapshot.getValue().toString();
-			    }
-
-			    @Override
-			    public void onCancelled() {
-			        System.err.println("Listener was cancelled");
-			    }
-		});*/
-		if(this.useRemoteTime){
-			fb.child("/widget/" + widgetId + "/config/-J-rsf0DZNOFdrg1Jsdz/game_time_mark").addValueEventListener(new ValueEventListener() {
-			    @Override
-			    public void onDataChange(DataSnapshot snapshot) {
-			    	gameTimeMark = snapshot.getValue().toString();
-			    }
-	
-			    @Override
-			    public void onCancelled() {
-			        System.err.println("Listener was cancelled");
-			    }
-			});
-		}
-		
-		/*fb.child("/Jefferson").addValueEventListener(new ValueEventListener(){
-			@Override
+		//Watch the game's UTC start time
+		fb.child("/widget/" + this.config.get("gameWidgetId") + "/config/" + this.config.get("gameWidgetConfigId") + "/game_start_timestamp").addValueEventListener(new ValueEventListener() {
+		    @Override
 		    public void onDataChange(DataSnapshot snapshot) {
-				Calendar c = Calendar.getInstance();
-				boolean needUpload = true;
-				ArrayList jeffersonList = (ArrayList)snapshot.getValue();
-		    	for(int i=0; i<jeffersonList.size(); i++){
-		    		if(!((Map)jeffersonList.get(i)).get("id").equals(jeffersonId)){
-		    			 if(c.getTimeInMillis() - Long.parseLong(((Map)jeffersonList.get(i)).get("time").toString()) < 500){
-		    				 needUpload = false;
-		    			 }
-		    		}
-		    	}
-		    	this.
+		    	String val = snapshot.getValue().toString();
+		    	System.out.println("val = " + val);
+		    	gameStartTimestamp = val;
+		    	System.out.println("gameStartTimestamp set to " + gameStartTimestamp);
 		    }
 
 		    @Override
 		    public void onCancelled() {
-		        
+		        System.err.println("Listener was cancelled");
 		    }
-		});*/
-		
+		});		
 	}
 	
 	public boolean isTimeOffsetChanged(){
@@ -209,8 +162,8 @@ public class Obscene implements Runnable {
 		return timeOffset;
 	}
 	
-	public String getGameStatus(){
-		return status;
+	public String getGameClockState(){
+		return clockState;
 	}
 	
 	public String getMapName(){

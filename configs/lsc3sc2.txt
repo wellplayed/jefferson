@@ -1,4 +1,0 @@
-broadcast=>Lone Star Clash 3 StarCraft 2
-firebaseBaseUrl=>https://vin-obscene.firebaseio.com/broadcasts/lsc3sc2
-game=>sc2
-playersPerTeam=>1
