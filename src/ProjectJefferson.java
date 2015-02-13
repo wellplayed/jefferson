@@ -98,6 +98,11 @@ public class ProjectJefferson {
 			config.put("gameWidgetConfigId", "default");
 		}
 		
+		if(!config.containsKey("usesMaps")) {
+			System.out.println("Using default gameWidgetConfigId of 0");
+			config.put("usesMaps", "0");
+		}
+		
 		System.out.println("------------");
 		//DONE FILE READING
 
@@ -108,24 +113,17 @@ public class ProjectJefferson {
 		Integer playersPerTeam = Integer.parseInt(config.get("playersPerTeam"));
 		if(config.get("game")=="lol"){
 			/* League of Legends */ 
-			String previousStatus = "stop";
+			String previousStatus = "stopped";
 			int x = 0;
 			Player[] leftPlayers = new Player[playersPerTeam];
 			Player[] rightPlayers = new Player[playersPerTeam];
 			String timeOffset = "0m0s";
 			while(true) {
-				//String status = obscene.getGameStatus();
-				String status = "start";
-				if(status.equals("start")){
-					
-					if(obscene.isTimeOffsetChanged()){
-						x=0;
-						timeOffset = obscene.getTimeOffset();
-					}
-					if(previousStatus.equals("stop")){
+				String status = obscene.getGameClockState();
+				if(status.equals("started")){
+					if(previousStatus.equals("stopped")){
 					  MemoryAccess.setProcessName("League of Legends (TM) Client");
 					  ExperienceAndOffsetsPlayerLocator locator = new ExperienceAndOffsetsPlayerLocator(playersPerTeam);
-					  //PlayerListPlayerLocator locator = new PlayerListPlayerLocator();
 			          ArrayList<Integer> allPlayers = locator.getPlayerAddresses();
 			          int i = 0;
 			          System.out.println("Left team");
@@ -143,6 +141,8 @@ public class ProjectJefferson {
 			          }
 					}
 					long startTime = Calendar.getInstance().getTimeInMillis();
+					long gameSeconds = obscene.getGameSeconds();
+					System.out.println("Game seconds: " + gameSeconds);
 					HashMap<String, Object> gameData = new HashMap<String, Object>();
 					HashMap<String, Object> leftStats = new HashMap<String, Object>();
 					HashMap<String, Object> rightStats = new HashMap<String, Object>();
@@ -181,9 +181,9 @@ public class ProjectJefferson {
 						Thread.sleep(5000 - (endTime - startTime));
 					}
 				}
-				else if(status.equals("pause")){
+				else if(status.equals("paused")){
 					Thread.sleep(1000);
-				}else if(status.equals("stop")){
+				}else if(status.equals("stopped")){
 					x=0;
 					Thread.sleep(1000);
 				}
@@ -191,7 +191,7 @@ public class ProjectJefferson {
 			}
 		}else if(config.get("game")=="sc2"){
 			/* Starcraft 2 */ 
-			String previousStatus = "stop";
+			String previousStatus = "stopped";
 			int x = 0;
 			SC2Player playerOne = null;
 			SC2Player playerTwo = null;
@@ -199,7 +199,7 @@ public class ProjectJefferson {
 			String username = System.getProperty("user.name");
 			while(true) {
 				String status = obscene.getGameClockState();
-				if(status.equals("start")){
+				if(status.equals("started")){
 					String map = obscene.getMapName();
 					long startTime = Calendar.getInstance().getTimeInMillis();
 					HashMap<String, Object> gameData = new HashMap<String, Object>();
@@ -228,9 +228,9 @@ public class ProjectJefferson {
 						Thread.sleep(725*5 - (endTime - startTime));
 					}
 				}
-				else if(status.equals("pause")){
+				else if(status.equals("paused")){
 					Thread.sleep(1000);
-				}else if(status.equals("stop")){
+				}else if(status.equals("stopped")){
 					x=0;
 					Thread.sleep(1000);
 				}
