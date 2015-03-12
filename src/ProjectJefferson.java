@@ -1,4 +1,3 @@
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -126,6 +125,10 @@ public class ProjectJefferson {
 			Player[] leftPlayers = new Player[playersPerTeam];
 			Player[] rightPlayers = new Player[playersPerTeam];
 			String timeOffset = "0m0s";
+			
+			int totalGameGold = 0;
+			int prev_totalGameGold = 0;
+			
 			while(true) {
 				String status = obscene.getGameClockState();
 				System.out.println("Status: " + status);
@@ -170,6 +173,9 @@ public class ProjectJefferson {
 					teamData.put("right", fullRightStats);
 					StatEntry totalLeftGold = Player.getTotalStatFromPlayers(leftPlayers, new IntStat("gold", PlayerStats.TOTAL_GOLD));
 					StatEntry totalRightGold = Player.getTotalStatFromPlayers(rightPlayers, new IntStat("gold", PlayerStats.TOTAL_GOLD));
+					
+					totalGameGold = Integer.parseInt(totalLeftGold.getValue()) + Integer.parseInt(totalRightGold.getValue());
+					
 					leftStats.put(totalLeftGold.getName(), totalLeftGold.getValue());
 					rightStats.put(totalRightGold.getName(), totalRightGold.getValue());
 					leftStats.put("players",leftPlayersMap);
@@ -182,12 +188,27 @@ public class ProjectJefferson {
 					gameData.put("player_stats", teamData);
 					gameData.put("upload_type", 1);
 					System.out.println(gameData);
+					//gold print 
+					System.out.println(totalGameGold);
+					System.out.println(prev_totalGameGold);
+					
+
+					if (totalGameGold > 4750  && prev_totalGameGold == totalGameGold){
+						System.out.println("game has ended");
+						
+					}
+
+					prev_totalGameGold = totalGameGold;
+					
+					
 					obscene.queueData(gameData);
 					x++;
 					long endTime = Calendar.getInstance().getTimeInMillis();
 					if(endTime - startTime >= 0){
 						Thread.sleep(5000 - (endTime - startTime));
 					}
+					
+					
 				}
 				else if(status.equals("paused")){
 					Thread.sleep(1000);
@@ -195,6 +216,7 @@ public class ProjectJefferson {
 					x=0;
 					Thread.sleep(1000);
 				}
+				
 				previousStatus = status;
 			}
 		}else if(config.get("game")=="sc2"){
