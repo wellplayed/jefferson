@@ -128,6 +128,7 @@ public class ProjectJefferson {
 			
 			int totalGameGold = 0;
 			int prev_totalGameGold = 0;
+			boolean game_end = false;
 			
 			while(true) {
 				String status = obscene.getGameClockState();
@@ -176,6 +177,7 @@ public class ProjectJefferson {
 					
 					totalGameGold = Integer.parseInt(totalLeftGold.getValue()) + Integer.parseInt(totalRightGold.getValue());
 					
+					if (!game_end){
 					leftStats.put(totalLeftGold.getName(), totalLeftGold.getValue());
 					rightStats.put(totalRightGold.getName(), totalRightGold.getValue());
 					leftStats.put("players",leftPlayersMap);
@@ -189,25 +191,28 @@ public class ProjectJefferson {
 					gameData.put("upload_type", 1);
 					System.out.println(gameData);
 					//gold print 
-					System.out.println(totalGameGold);
-					System.out.println(prev_totalGameGold);
+					System.out.println("Current total game gold: " + totalGameGold);
+					System.out.println("Previous total game gold: " + prev_totalGameGold);
 					
-
+					//if current total gold == previous total gold, game has ended
 					if (totalGameGold > 4750  && prev_totalGameGold == totalGameGold){
 						System.out.println("game has ended");
-						
+						game_end = true;
 					}
 
 					prev_totalGameGold = totalGameGold;
 					
-					
 					obscene.queueData(gameData);
+				}
+					//if current total gold < previous total gold, there is a new game
+					if (totalGameGold == 4750 && totalGameGold < prev_totalGameGold) {
+						game_end = false;
+					}
 					x++;
 					long endTime = Calendar.getInstance().getTimeInMillis();
 					if(endTime - startTime >= 0){
 						Thread.sleep(5000 - (endTime - startTime));
 					}
-					
 					
 				}
 				else if(status.equals("paused")){
