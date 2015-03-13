@@ -177,35 +177,37 @@ public class ProjectJefferson {
 					
 					totalGameGold = Integer.parseInt(totalLeftGold.getValue()) + Integer.parseInt(totalRightGold.getValue());
 					
-					if (!game_end){
-					leftStats.put(totalLeftGold.getName(), totalLeftGold.getValue());
-					rightStats.put(totalRightGold.getName(), totalRightGold.getValue());
-					leftStats.put("players",leftPlayersMap);
-					rightStats.put("players",rightPlayersMap);
-					gameLog.put("left", leftStats);
-					gameLog.put("right", rightStats);
-					gameData.put("game_time", convertTimeToString(gameSeconds*1000, timeOffset));
-					gameLog.put("time", convertTimeToString(gameSeconds*1000, timeOffset));
-					gameData.put("game_log", gameLog);
-					gameData.put("player_stats", teamData);
-					gameData.put("upload_type", 1);
-					System.out.println(gameData);
-					//gold print 
-					System.out.println("Current total game gold: " + totalGameGold);
-					System.out.println("Previous total game gold: " + prev_totalGameGold);
-					
 					//if current total gold == previous total gold, game has ended
 					if (totalGameGold > 4750  && prev_totalGameGold == totalGameGold){
 						System.out.println("game has ended");
 						game_end = true;
 					}
 
+					if (!game_end){
+						leftStats.put(totalLeftGold.getName(), totalLeftGold.getValue());
+						rightStats.put(totalRightGold.getName(), totalRightGold.getValue());
+						leftStats.put("players",leftPlayersMap);
+						rightStats.put("players",rightPlayersMap);
+						gameLog.put("left", leftStats);
+						gameLog.put("right", rightStats);
+						gameData.put("game_time", convertTimeToString(gameSeconds*1000, timeOffset));
+						gameLog.put("time", convertTimeToString(gameSeconds*1000, timeOffset));
+						gameData.put("game_log", gameLog);
+						gameData.put("player_stats", teamData);
+						gameData.put("upload_type", 1);
+						System.out.println(gameData);
+						//gold print 
+						System.out.println("Current total game gold: " + totalGameGold);
+						System.out.println("Previous total game gold: " + prev_totalGameGold);
+						obscene.queueData(gameData);
+
+					}
+					
+					//update previous  total game gold
 					prev_totalGameGold = totalGameGold;
 					
-					obscene.queueData(gameData);
-				}
 					//if current total gold < previous total gold, there is a new game
-					if (totalGameGold == 4750 && totalGameGold < prev_totalGameGold) {
+					if (totalGameGold < prev_totalGameGold) {
 						game_end = false;
 					}
 					x++;
