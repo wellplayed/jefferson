@@ -229,8 +229,16 @@ public class Obscene implements Runnable {
 				//append game log with integer index
 				Firebase insertGameLog = activeGameLog.child("/" + activeGameLogCount);
 				
-				
 				//reference prev game information to begin implementing filler data
+				
+				/*PATCH NOTES*
+				 * Integer indexing works
+				 * TotalGameGold is now a part of each game log
+				 * NOT DONE working on scanning the previous log entries to look for gaps + adding in filler data
+				 * Current work below was just checking previous log entry to see if more than 5s elapsed (not complete)
+				 * prob ugly as fu
+				 * SORRY didn't know you were sleeping 
+				 */
 
 				/*	Map<String, Object> currentGameLog = (Map<String, Object>) entry.get("game_log");
 				  if (activeGameLogCount != 0 ){
