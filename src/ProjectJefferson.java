@@ -130,6 +130,8 @@ public class ProjectJefferson {
 			int prev_totalGameGold = 0;
 			boolean game_end = false;
 			
+			ArrayList<Integer> gameArray = new ArrayList<Integer>();
+			
 			while(true) {
 				String status = obscene.getGameClockState();
 				System.out.println("Status: " + status);
@@ -195,6 +197,7 @@ public class ProjectJefferson {
 						gameData.put("game_log", gameLog);
 						gameData.put("player_stats", teamData);
 						gameData.put("upload_type", 1);
+						gameLog.put("total_game_gold", totalGameGold);
 						System.out.println(gameData);
 						//gold print 
 						System.out.println("Current total game gold: " + totalGameGold);

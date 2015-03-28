@@ -36,6 +36,9 @@ public class Obscene implements Runnable {
 	public boolean useRemoteTime;
 	public boolean jeffersonUpload;
 	public Semaphore firebaseQueueSync;
+	
+	public long activeGameLogCount;
+	public DataSnapshot refSnapshot;
 
 	public Obscene(HashMap<String, String> config){
 		this.config = config;
@@ -47,12 +50,15 @@ public class Obscene implements Runnable {
 	public void configureFirebase(){
 		fb = new Firebase(this.config.get("firebaseBaseUrl"));
 		
+
 		//Watching for changes in active series
 		fb.child("/settings/stream_settings/stream_" + this.config.get("streamId") + "/active_series_id").addValueEventListener(new ValueEventListener() {
 		    @Override
 		    public void onDataChange(DataSnapshot snapshot) {
 		    	activeSeriesId = snapshot.getValue().toString();
 		        activeSeriesMatches = fb.child("/series/" + snapshot.getValue().toString() + "/matches");
+		        
+
 		        activeSeriesMatches.addValueEventListener(new ValueEventListener() {
 		            @Override
 		            public void onDataChange(DataSnapshot snapshot) {
@@ -66,6 +72,25 @@ public class Obscene implements Runnable {
 			            				activeGamePlayerStats = fb.child("/match_lol_player_stats/" + activeSeriesId + "/" + i);
 			            				activeGameLog = fb.child("/match_lol_game_log/" + activeSeriesId + "/" + i);
 			            				activeGameInfo = fb.child("/match_lol_game_info/" + activeSeriesId + "/" + i);
+			            				
+			            				//check for changes in game log data, save the number of children found in the match index
+			            		        fb.child("/match_lol_game_log/" + activeSeriesId + "/" + i).addValueEventListener(new ValueEventListener() {
+
+			            					@Override
+			            					public void onCancelled() {
+			            						// TODO Auto-generated method stub
+			            						
+			            					}
+
+			            					@Override
+			            					public void onDataChange(DataSnapshot snapshot) {
+			            						activeGameLogCount = snapshot.getChildrenCount();
+			            						//save reference snapshot to access previous data 
+			            						refSnapshot = snapshot;	
+			            					}
+			            		        });
+			            		        
+			            				
 			            				activeGame.child("/map_id").addValueEventListener(new ValueEventListener(){
 											@Override
 											public void onDataChange(DataSnapshot snapshot) {
@@ -200,8 +225,38 @@ public class Obscene implements Runnable {
 		if((Integer)entry.get("upload_type") == 1){
 			activeGamePlayerStats.setValue(entry.get("player_stats"));
 			if(config.get("logData").equals("1")){
-				Firebase newLogEntry = activeGameLog.push();
-				newLogEntry.setValue(entry.get("game_log"));
+
+				//append game log with integer index
+				Firebase insertGameLog = activeGameLog.child("/" + activeGameLogCount);
+				
+				
+				//reference prev game information to begin implementing filler data
+
+				/*	Map<String, Object> currentGameLog = (Map<String, Object>) entry.get("game_log");
+				  if (activeGameLogCount != 0 ){
+					Firebase prevGameLog = activeGameLog.child("/" + (activeGameLogCount-1));
+					Map<String, Object> prevLog = (Map<String, Object>) refSnapshot.child("/" + (activeGameLogCount-1)).getValue();
+					
+					Map<String, Object> prevLeftLog = (Map<String, Object>)prevLog.get("left");
+					Map<String, Object> prevRightLog = (Map<String, Object>)prevLog.get("right");
+					Integer prevRightGold = Integer.parseInt(prevLeftLog.get("gold").toString());
+					Integer prevLeftGold = Integer.parseInt( prevRightLog.get("gold").toString());
+					
+					Map<String, Object> currentLeftLog = (Map<String, Object>)currentGameLog.get("left");
+					Map<String, Object> currentRightLog = (Map<String, Object>)currentGameLog.get("right");
+					Integer currentRightGold = Integer.parseInt(currentRightLog.get("gold").toString());
+					Integer currentLeftGold = Integer.parseInt(currentLeftLog.get("gold").toString());
+					
+					prevLog.get("time");
+					currentGameLog.get("time").toString());
+	
+									
+				}*/
+
+				
+				insertGameLog.setValue(entry.get("game_log"));				
+				activeGameLogCount++;
+				
 			}
 		}
 	}
